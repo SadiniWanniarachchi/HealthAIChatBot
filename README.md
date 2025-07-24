@@ -21,7 +21,9 @@ A modern healthcare AI assistant built with React, Node.js, and MongoDB.
    ```bash
    cd backend
    npm install
-   # Create .env file with your environment variables
+   # Copy the environment template and fill in your actual values
+   cp .env.example .env
+   # Edit .env with your actual credentials (see Environment Variables section below)
    npm start
    ```
 
@@ -29,7 +31,7 @@ A modern healthcare AI assistant built with React, Node.js, and MongoDB.
    ```bash
    cd ../frontend
    npm install
-   # Create .env file with your environment variables
+   # Create .env file with your environment variables (optional)
    npm run dev
    ```
 
@@ -57,10 +59,21 @@ VITE_APP_VERSION=1.0.0
 
 ## 🔒 Security Notes
 
-- Never commit `.env` files to version control
-- Use strong, unique secrets for JWT_SECRET (minimum 32 characters)
-- Use MongoDB Atlas with proper IP whitelisting
-- Enable 2FA on your MongoDB Atlas account
+⚠️ **CRITICAL SECURITY REMINDERS:**
+
+- **NEVER commit `.env` files to version control** - They contain sensitive credentials
+- Always use `.env.example` files as templates for other developers
+- **Change all default passwords immediately** - Especially if you've accidentally exposed them
+- Use strong, unique secrets for JWT_SECRET (minimum 32 characters) - Generate at https://generate-secret.vercel.app/32
+- Use MongoDB Atlas with proper IP whitelisting and strong passwords
+- Enable 2FA on your MongoDB Atlas account and all related services
+- Regularly rotate your credentials as a security best practice
+
+### Setting up Environment Variables
+
+1. Copy the example file: `cp backend/.env.example backend/.env`
+2. Fill in your actual values in the `.env` file
+3. Never commit the actual `.env` file - it's already in `.gitignore`
 
 ## 📁 Project Structure
 
