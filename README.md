@@ -39,7 +39,7 @@ A modern healthcare AI assistant built with React, Node.js, and MongoDB.
 ```env
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+MONGODB_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/YOUR_DATABASE
 JWT_SECRET=your_jwt_secret_minimum_32_characters
 JWT_EXPIRES_IN=7d
 EMAIL_HOST=smtp.gmail.com
