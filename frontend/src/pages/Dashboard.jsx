@@ -14,7 +14,8 @@ import {
     CheckCircle,
     Plus,
     Menu,
-    X
+    X,
+    ChevronDown
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -331,6 +332,20 @@ const Dashboard = () => {
         fetchDashboardData();
     }, []);
 
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isMobileMenuOpen && !event.target.closest('.dropdown-container')) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMobileMenuOpen]);
+
     const fetchDashboardData = async () => {
         try {
             const response = await diagnosisAPI.getDiagnosisHistory(1, 5);
@@ -391,12 +406,12 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-indigo-50/30 relative overflow-hidden">
+        <div className="min-h-screen bg-blue-50 relative overflow-hidden">
             {/* Sophisticated Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse"></div>
                 <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-indigo-300/5 to-purple-300/5 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-blue-300/5 to-cyan-300/5 rounded-full blur-3xl"></div>
             </div>
 
             {/* Professional Header */}
@@ -410,12 +425,12 @@ const Dashboard = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6 }}
                         >
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg flex items-center justify-center">
+                            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl shadow-lg flex items-center justify-center">
                                 <HeartPulse className="h-7 w-7 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
-                                    HealthAI Assistant
+                                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                                    MediCare AI
                                 </h1>
                                 <p className="text-sm text-gray-500 font-medium">Advanced Medical Diagnosis</p>
                             </div>
@@ -428,52 +443,38 @@ const Dashboard = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6 }}
                         >
-                            <div className="hidden md:block text-right">
-                                <p className="text-sm text-gray-600">Welcome back,</p>
-                                <p className="font-semibold text-gray-900">{user?.firstName} {user?.lastName}</p>
-                            </div>
-
-                            <div className="relative group">
+                            <div className="relative dropdown-container">
                                 <motion.button
-                                    className="w-12 h-12 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-blue-500 hover:to-indigo-600 rounded-xl shadow-lg flex items-center justify-center transition-all duration-300 group"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    className="flex items-center space-x-3 hover:bg-blue-50/50 px-3 py-2 rounded-lg transition-all duration-300 group"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 >
-                                    <User className="h-6 w-6 text-gray-600 group-hover:text-white transition-colors" />
+                                    <User className="h-6 w-6 text-blue-600" />
+                                    <div className="text-left">
+                                        <p className="font-semibold text-gray-900 text-medium">{user?.firstName} {user?.lastName}</p>
+
+                                    </div>
+                                    <ChevronDown className={`h-4 w-4 text-gray-500 group-hover:text-blue-600 transition-all duration-300 ${isMobileMenuOpen ? 'transform rotate-180' : ''}`} />
                                 </motion.button>
 
                                 {/* Dropdown Menu */}
-                                <motion.div
-                                    className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 border border-gray-200/50"
-                                    initial={{ opacity: 0, y: -10 }}
-                                    whileHover={{ opacity: 1, y: 0 }}
-                                >
-                                    <div className="px-4 py-3 border-b border-gray-100">
-                                        <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
-                                        <p className="text-xs text-gray-500">{user?.email}</p>
-                                    </div>
-                                    <Link
-                                        to="/profile"
-                                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200"
+                                {isMobileMenuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        className="absolute right-0 mt-3 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl py-2 border border-gray-200/50 z-50"
                                     >
-                                        <User className="h-4 w-4 mr-3" />
-                                        Profile Settings
-                                    </Link>
-                                    <Link
-                                        to="/history"
-                                        className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200"
-                                    >
-                                        <History className="h-4 w-4 mr-3" />
-                                        Medical History
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-all duration-200"
-                                    >
-                                        <LogOut className="h-4 w-4 mr-3" />
-                                        Sign Out
-                                    </button>
-                                </motion.div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center px-2 py-2 text-sm text-red-600 hover:bg-red-50 transition-all duration-200"
+                                        >
+                                            <LogOut className="h-4 w-4 mr-3" />
+                                            Sign Out
+                                        </button>
+                                    </motion.div>
+                                )}
                             </div>
                         </motion.div>
                     </div>
@@ -491,15 +492,15 @@ const Dashboard = () => {
                     className="text-center py-8"
                 >
                     <motion.h2
-                        className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4"
+                        className="text-4xl md:text-5xl font-bold bg-gray-800 bg-clip-text pb-3 text-transparent mb-4"
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.2 }}
                     >
-                        Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, Dr. {user?.firstName}
+                        Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.firstName}
                     </motion.h2>
                     <motion.p
-                        className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+                        className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
@@ -518,7 +519,7 @@ const Dashboard = () => {
                     {/* New Diagnosis - Primary Action */}
                     <motion.button
                         onClick={handleStartNewDiagnosis}
-                        className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white p-8 rounded-3xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 group relative overflow-hidden"
+                        className="bg-blue-700 text-white p-8 rounded-3xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 group relative overflow-hidden"
                         whileHover={{ scale: 1.02, y: -4 }}
                         whileTap={{ scale: 0.98 }}
                     >
@@ -539,7 +540,7 @@ const Dashboard = () => {
                     >
                         <Link
                             to="/profile"
-                            className="block bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl shadow-xl hover:shadow-blue-400/25 transition-all duration-500 group relative overflow-hidden"
+                            className="block bg-blue-400 text-white p-8 rounded-3xl shadow-xl hover:shadow-blue-300/25 transition-all duration-500 group relative overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                             <div className="relative z-10 text-center">
@@ -559,7 +560,7 @@ const Dashboard = () => {
                     >
                         <Link
                             to="/history"
-                            className="block bg-gradient-to-br from-blue-400 to-blue-600 text-white p-8 rounded-3xl shadow-xl hover:shadow-blue-400/25 transition-all duration-500 group relative overflow-hidden"
+                            className="block bg-blue-400 text-white p-8 rounded-3xl shadow-xl hover:shadow-blue-300/25 transition-all duration-500 group relative overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                             <div className="relative z-10 text-center">
@@ -581,16 +582,16 @@ const Dashboard = () => {
                     className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
                 >
                     <motion.div
-                        className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 group"
+                        className="bg-white/90 backdrop-blur-xl mt-12 rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 group"
                         whileHover={{ scale: 1.02, y: -4 }}
                     >
                         <div className="flex items-center justify-between mb-6">
-                            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                                 <TrendingUp className="h-8 w-8 text-white" />
                             </div>
                             <div className="text-right">
                                 <motion.h3
-                                    className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
+                                    className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ duration: 0.8, delay: 0.5 }}
@@ -602,7 +603,7 @@ const Dashboard = () => {
                         </div>
                         <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
                             <motion.div
-                                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
+                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
                                 initial={{ width: 0 }}
                                 animate={{ width: '75%' }}
                                 transition={{ duration: 1.5, delay: 0.8 }}
@@ -611,7 +612,7 @@ const Dashboard = () => {
                     </motion.div>
 
                     <motion.div
-                        className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 group"
+                        className="bg-white/90 backdrop-blur-xl mt-12 rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 group"
                         whileHover={{ scale: 1.02, y: -4 }}
                     >
                         <div className="flex items-center justify-between mb-6">
@@ -641,7 +642,7 @@ const Dashboard = () => {
                     </motion.div>
 
                     <motion.div
-                        className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 group"
+                        className="bg-white/90 backdrop-blur-xl mt-12 rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 group"
                         whileHover={{ scale: 1.02, y: -4 }}
                     >
                         <div className="flex items-center justify-between mb-6">
