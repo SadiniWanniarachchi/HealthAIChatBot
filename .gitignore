@@ -10,10 +10,22 @@ yarn-error.log*
 .env.development
 .env.staging
 .env.production
+.env.test
 backend/.env
 frontend/.env
+*/.env
+**/.env
 # Allow .env.example files
 !**/.env.example
+!.env.example
+
+# API Keys and Secrets (Multiple patterns for safety)
+**/config/keys.js
+**/config/keys.json
+keys.js
+keys.json
+secrets.js
+secrets.json
 
 # Database
 *.db
