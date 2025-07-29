@@ -7,6 +7,12 @@ const auth = async (req, res, next) => {
         const authHeader = req.header('Authorization');
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.warn('Unauthorized access attempt - no token provided:', {
+                ip: req.ip,
+                userAgent: req.get('User-Agent'),
+                path: req.path,
+                method: req.method
+            });
             return res.status(401).json({
                 message: 'No token provided, authorization denied'
             });
@@ -22,14 +28,36 @@ const auth = async (req, res, next) => {
         const user = await User.findById(decoded.userId).select('-password');
 
         if (!user) {
+            console.warn('Invalid token - user not found:', {
+                tokenUserId: decoded.userId,
+                ip: req.ip,
+                path: req.path
+            });
             return res.status(401).json({
                 message: 'Token is not valid - user not found'
             });
         }
 
         if (!user.isActive) {
+            console.warn('Deactivated account access attempt:', {
+                userId: user._id,
+                email: user.email,
+                ip: req.ip,
+                path: req.path
+            });
             return res.status(401).json({
                 message: 'Account is deactivated'
+            });
+        }
+
+        // Log successful authentication for diagnosis-related endpoints
+        if (req.path.includes('/diagnosis')) {
+            console.log('Authenticated access to diagnosis endpoint:', {
+                userId: user._id,
+                email: user.email,
+                path: req.path,
+                method: req.method,
+                sessionId: req.params.sessionId || 'N/A'
             });
         }
 
@@ -40,10 +68,20 @@ const auth = async (req, res, next) => {
         console.error('Auth middleware error:', error);
 
         if (error.name === 'JsonWebTokenError') {
+            console.warn('Invalid JWT token:', {
+                error: error.message,
+                ip: req.ip,
+                path: req.path
+            });
             return res.status(401).json({
                 message: 'Token is not valid'
             });
         } else if (error.name === 'TokenExpiredError') {
+            console.warn('Expired JWT token:', {
+                error: error.message,
+                ip: req.ip,
+                path: req.path
+            });
             return res.status(401).json({
                 message: 'Token has expired'
             });

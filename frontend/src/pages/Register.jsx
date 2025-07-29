@@ -128,10 +128,9 @@ const Register = () => {
             };
 
             await register(registerData);
-            toast.success('Registration successful! Please login with your credentials.');
-            setTimeout(() => {
-                navigate('/login');
-            }, 1500);
+            toast.success('Registration successful! Welcome to the platform!');
+            // Navigate to dashboard since user is now automatically logged in
+            navigate('/dashboard');
         } catch (error) {
             const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
             toast.error(errorMessage);

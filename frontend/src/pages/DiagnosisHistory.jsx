@@ -14,11 +14,11 @@ import {
     AlertTriangle,
     FileText,
     Trash2,
-    MoreVertical,
     X,
     AlertCircle
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
+import { validateUserOwnership, filterUserData, logSecurityEvent, isUserAuthenticated } from '../utils/userSecurity';
 import toast from 'react-hot-toast';
 
 const DiagnosisHistory = () => {
@@ -28,9 +28,7 @@ const DiagnosisHistory = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [pagination, setPagination] = useState(null);
-    const [selectedDiagnosis, setSelectedDiagnosis] = useState(null);
     const [deleteConfirmation, setDeleteConfirmation] = useState(null);
-    const [activeDropdown, setActiveDropdown] = useState(null);
     const [deletingIds, setDeletingIds] = useState(new Set());
 
     useEffect(() => {
@@ -41,46 +39,44 @@ const DiagnosisHistory = () => {
         try {
             setIsLoading(true);
 
-            // Fetch backend diagnoses
-            let backendDiagnoses = [];
-            try {
-                const response = await diagnosisAPI.getDiagnosisHistory(currentPage, 10);
-                backendDiagnoses = response.diagnoses || [];
-                setPagination(response.pagination);
-            } catch (backendError) {
-                console.warn('Backend diagnosis fetch failed:', backendError);
-                setPagination({ totalPages: 1, currentPage: 1, total: 0 });
+            // Ensure user is authenticated
+            if (!isUserAuthenticated(user)) {
+                toast.error('Please log in to view your consultation history');
+                navigate('/login');
+                return;
             }
 
-            // Get local completed sessions from localStorage
-            const localSessions = JSON.parse(localStorage.getItem('completedSessions') || '[]');
+            // Fetch from MongoDB (backend) only - backend will filter by authenticated user
+            const response = await diagnosisAPI.getDiagnosisHistory(currentPage, 10);
 
-            // Convert local sessions to diagnosis format
-            const localDiagnoses = localSessions.map(session => ({
-                sessionId: session.sessionId,
-                createdAt: session.createdAt,
-                completedAt: session.completedAt,
-                userInfo: session.userInfo,
-                diagnosis: session.diagnosis,
-                symptoms: session.symptoms || [],
-                urgencyLevel: session.diagnosis?.urgencyLevel || 'low',
-                primaryCondition: session.diagnosis?.primaryCondition?.name || 'Health Consultation',
-                recommendations: session.diagnosis?.recommendations || [],
-                isLocal: true // Mark as local session
-            }));            // Combine backend and local diagnoses, avoiding duplicates
-            const backendSessionIds = backendDiagnoses.map(d => d.sessionId);
-            const uniqueLocalDiagnoses = localDiagnoses.filter(ld => !backendSessionIds.includes(ld.sessionId));
+            // Additional frontend validation using security utilities
+            const userDiagnoses = filterUserData(response.diagnoses || [], user);
 
-            // Merge and sort by creation date
-            const allDiagnoses = [...backendDiagnoses, ...uniqueLocalDiagnoses]
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setDiagnoses(userDiagnoses);
+            setPagination(response.pagination);
 
-            setDiagnoses(allDiagnoses);
+            logSecurityEvent('DIAGNOSIS_HISTORY_LOADED', {
+                userEmail: user.email,
+                totalDiagnoses: userDiagnoses.length,
+                page: currentPage
+            });
 
-            console.log('Combined diagnoses:', allDiagnoses);
+            console.log(`Fetched ${userDiagnoses.length} diagnoses for user:`, user.email);
 
         } catch (error) {
             console.error('Error fetching diagnosis history:', error);
+            if (error.response?.status === 401) {
+                logSecurityEvent('UNAUTHORIZED_HISTORY_ACCESS', {
+                    userEmail: user?.email || 'unknown',
+                    error: error.message
+                });
+                toast.error('Session expired. Please log in again.');
+                navigate('/login');
+            } else {
+                toast.error('Failed to fetch consultation history');
+            }
+            setDiagnoses([]);
+            setPagination({ totalPages: 1, currentPage: 1, total: 0 });
         } finally {
             setIsLoading(false);
         }
@@ -126,50 +122,72 @@ const DiagnosisHistory = () => {
     };
 
     const viewDiagnosis = (diagnosis) => {
-        // Always show the diagnosis details
-        setSelectedDiagnosis(diagnosis);
+        // Ensure user is authenticated
+        if (!isUserAuthenticated(user)) {
+            toast.error('Please log in to view your consultation');
+            navigate('/login');
+            return;
+        }
+
+        // Validate diagnosis ownership using security utility
+        if (!validateUserOwnership(diagnosis, user)) {
+            logSecurityEvent('UNAUTHORIZED_DIAGNOSIS_ACCESS_ATTEMPT', {
+                userEmail: user.email,
+                attemptedSessionId: diagnosis.sessionId,
+                diagnosisUserEmail: diagnosis.userInfo?.email || 'unknown'
+            });
+            toast.error('Access denied. This consultation does not belong to you.');
+            return;
+        }
+
+        // Log successful access
+        logSecurityEvent('DIAGNOSIS_ACCESSED', {
+            userEmail: user.email,
+            sessionId: diagnosis.sessionId
+        });
+
+        // Navigate to the chat interface to show the original conversation
+        console.log('Viewing diagnosis:', diagnosis.sessionId, 'for user:', user.email);
+        console.log('Messages to pass:', diagnosis.messages);
+
+        navigate(`/chat/${diagnosis.sessionId}`, {
+            state: {
+                existingSession: diagnosis,
+                messages: diagnosis.messages || []
+            }
+        });
     };
 
     const handleDeleteClick = (e, diagnosis) => {
         e.stopPropagation();
         setDeleteConfirmation(diagnosis);
-        setActiveDropdown(null);
     };
 
     const handleDeleteConfirm = async () => {
         if (!deleteConfirmation) return;
 
         const diagnosisId = deleteConfirmation.sessionId;
-        const isLocalSession = deleteConfirmation.isLocal;
+
+        console.log('Attempting to delete from MongoDB:', diagnosisId);
+
         setDeletingIds(prev => new Set([...prev, diagnosisId]));
 
         try {
-            if (isLocalSession) {
-                // Delete from localStorage
-                const existingSessions = JSON.parse(localStorage.getItem('completedSessions') || '[]');
-                const updatedSessions = existingSessions.filter(s => s.sessionId !== diagnosisId);
-                localStorage.setItem('completedSessions', JSON.stringify(updatedSessions));
-                console.log('Deleted local session:', diagnosisId);
-            } else {
-                // Call API to delete the backend diagnosis
-                await diagnosisAPI.deleteDiagnosis(diagnosisId);
-                console.log('Deleted backend diagnosis:', diagnosisId);
-            }
+            // Delete from MongoDB
+            await diagnosisAPI.deleteDiagnosis(diagnosisId);
+            console.log('Successfully deleted from MongoDB:', diagnosisId);
 
-            // Remove from local state with animation
+            // Remove from local state immediately
             setDiagnoses(prev => prev.filter(d => d.sessionId !== diagnosisId));
 
             toast.success('Consultation deleted successfully');
 
-            // Update pagination if needed (only for backend sessions)
-            if (!isLocalSession && diagnoses.length === 1 && currentPage > 1) {
-                setCurrentPage(prev => prev - 1);
-            } else if (!isLocalSession) {
-                fetchDiagnoses(); // Refresh to get updated counts
-            }
+            // Refresh data to ensure consistency
+            setTimeout(() => fetchDiagnoses(), 500);
+
         } catch (error) {
             console.error('Error deleting diagnosis:', error);
-            toast.error('Failed to delete consultation');
+            toast.error(`Failed to delete consultation: ${error.message || 'Unknown error'}`);
         } finally {
             setDeletingIds(prev => {
                 const newSet = new Set(prev);
@@ -179,20 +197,6 @@ const DiagnosisHistory = () => {
             setDeleteConfirmation(null);
         }
     };
-
-    const toggleDropdown = (e, diagnosisId) => {
-        e.stopPropagation();
-        setActiveDropdown(activeDropdown === diagnosisId ? null : diagnosisId);
-    };
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = () => setActiveDropdown(null);
-        if (activeDropdown) {
-            document.addEventListener('click', handleClickOutside);
-            return () => document.removeEventListener('click', handleClickOutside);
-        }
-    }, [activeDropdown]);
 
     if (isLoading) {
         return (
@@ -248,9 +252,9 @@ const DiagnosisHistory = () => {
                             </div>
                             <div className="ml-4">
                                 <h3 className="text-2xl font-bold text-gray-900">
-                                    {diagnoses.filter(d => d.isLocal).length}
+                                    {diagnoses.filter(d => d.status === 'completed').length}
                                 </h3>
-                                <p className="text-gray-600">Local Sessions</p>
+                                <p className="text-gray-600">Completed Sessions</p>
                             </div>
                         </div>
                     </div>
@@ -316,12 +320,6 @@ const DiagnosisHistory = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1">
                                                 <div className="flex items-center space-x-3 mb-2">
-                                                    {diagnosis.isLocal && (
-                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                                            <FileText className="h-3 w-3 mr-1" />
-                                                            Local
-                                                        </span>
-                                                    )}
                                                     {diagnosis.diagnosis?.urgencyLevel && (
                                                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(diagnosis.diagnosis.urgencyLevel)}`}>
                                                             {getUrgencyIcon(diagnosis.diagnosis.urgencyLevel)}
@@ -331,9 +329,7 @@ const DiagnosisHistory = () => {
                                                     <span className="text-sm text-gray-500">
                                                         {formatDate(diagnosis.createdAt)}
                                                     </span>
-                                                </div>
-
-                                                <h4 className="font-medium text-gray-900 mb-1">
+                                                </div>                                                <h4 className="font-medium text-gray-900 mb-1">
                                                     {diagnosis.diagnosis?.primaryCondition?.name || 'Consultation in progress'}
                                                 </h4>
 
@@ -357,47 +353,15 @@ const DiagnosisHistory = () => {
                                             </div>
 
                                             <div className="flex items-center space-x-2 ml-4">
+                                                {/* Direct delete button - always visible */}
                                                 <button
-                                                    className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        viewDiagnosis(diagnosis);
-                                                    }}
+                                                    onClick={(e) => handleDeleteClick(e, diagnosis)}
+                                                    className="p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-700 transition-colors"
+                                                    disabled={deletingIds.has(diagnosis.sessionId)}
+                                                    title="Delete consultation"
                                                 >
-                                                    View Details
+                                                    <Trash2 className="h-4 w-4" />
                                                 </button>
-
-                                                {/* Modern dropdown menu */}
-                                                <div className="relative">
-                                                    <button
-                                                        onClick={(e) => toggleDropdown(e, diagnosis.sessionId)}
-                                                        className="p-2 rounded-full hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
-                                                        disabled={deletingIds.has(diagnosis.sessionId)}
-                                                    >
-                                                        <MoreVertical className="h-4 w-4 text-gray-500" />
-                                                    </button>
-
-                                                    {/* Dropdown menu */}
-                                                    <AnimatePresence>
-                                                        {activeDropdown === diagnosis.sessionId && (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                                transition={{ duration: 0.15 }}
-                                                                className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20"
-                                                            >
-                                                                <button
-                                                                    onClick={(e) => handleDeleteClick(e, diagnosis)}
-                                                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                                    Delete Consultation
-                                                                </button>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -434,88 +398,6 @@ const DiagnosisHistory = () => {
                     )}
                 </div>
             </div>
-
-            {/* Diagnosis Detail Modal */}
-            {selectedDiagnosis && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto"
-                    >
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-gray-900">Diagnosis Details</h3>
-                                <button
-                                    onClick={() => setSelectedDiagnosis(null)}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    <X className="h-5 w-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-6">
-                            <div className="space-y-6">
-                                <div>
-                                    <h4 className="font-medium text-gray-900 mb-2">Session Information</h4>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <p className="text-sm"><strong>Date:</strong> {formatDate(selectedDiagnosis.createdAt)}</p>
-                                        <p className="text-sm"><strong>Session ID:</strong> {selectedDiagnosis.sessionId}</p>
-                                        {selectedDiagnosis.isLocal && (
-                                            <p className="text-sm"><strong>Type:</strong> <span className="px-2 py-1 rounded text-xs bg-purple-100 text-purple-800">Local Session</span></p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-medium text-gray-900 mb-2">Symptoms</h4>
-                                    <div className="space-y-2">
-                                        {selectedDiagnosis.symptoms?.map((symptom, index) => (
-                                            <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                                <span className="text-sm">{symptom.name}</span>
-                                                <span className={`px-2 py-1 rounded text-xs ${symptom.severity === 'severe' ? 'bg-red-100 text-red-800' :
-                                                    symptom.severity === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-green-100 text-green-800'
-                                                    }`}>
-                                                    {symptom.severity}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {selectedDiagnosis.diagnosis?.primaryCondition && (
-                                    <div>
-                                        <h4 className="font-medium text-gray-900 mb-2">Primary Assessment</h4>
-                                        <div className="bg-blue-50 p-4 rounded-lg">
-                                            <h5 className="font-medium text-blue-900">{selectedDiagnosis.diagnosis.primaryCondition.name}</h5>
-                                            <p className="text-sm text-blue-800 mt-1">{selectedDiagnosis.diagnosis.primaryCondition.description}</p>
-                                            <div className="mt-2">
-                                                <span className="text-sm text-blue-700">Confidence: {selectedDiagnosis.diagnosis.primaryCondition.confidence}%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedDiagnosis.diagnosis?.recommendations && (
-                                    <div>
-                                        <h4 className="font-medium text-gray-900 mb-2">Recommendations</h4>
-                                        <ul className="space-y-2">
-                                            {selectedDiagnosis.diagnosis.recommendations.map((rec, index) => (
-                                                <li key={index} className="flex items-start text-sm">
-                                                    <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                                                    {rec}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
 
             {/* Modern Delete Confirmation Modal */}
             <AnimatePresence>

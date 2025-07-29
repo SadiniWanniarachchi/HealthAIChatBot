@@ -59,23 +59,30 @@ const Dashboard = () => {
     const fetchRecentDiagnoses = async () => {
         try {
             setIsLoading(true);
-            const response = await diagnosisAPI.getRecentDiagnoses();
-            setRecentDiagnoses(response.data.diagnoses || []);
+            // Use the existing diagnosis history endpoint to get recent diagnoses
+            const response = await diagnosisAPI.getDiagnosisHistory(1, 5);
+            setRecentDiagnoses(response.diagnoses || []);
             setStats({
-                totalConsultations: response.data.totalConsultations || 0,
-                completedDiagnoses: response.data.completedDiagnoses || 0,
-                averageRating: response.data.averageRating || 0
+                totalConsultations: response.pagination?.total || 0,
+                completedDiagnoses: response.diagnoses?.filter(d => d.status === 'completed').length || 0,
+                averageRating: 4.5 // Mock rating for now
             });
         } catch (error) {
             console.error('Error fetching recent diagnoses:', error);
-            // Removed toast notification - just set default empty state
+            // Set default empty state on error
+            setRecentDiagnoses([]);
+            setStats({
+                totalConsultations: 0,
+                completedDiagnoses: 0,
+                averageRating: 0
+            });
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleStartNewDiagnosis = () => {
-        navigate('/diagnosis');
+        navigate('/chat');
     };
 
     const handleLogout = async () => {

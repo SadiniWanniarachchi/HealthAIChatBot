@@ -1,4 +1,4 @@
-import { createAIService, MockAIService, OpenAIService, GeminiService } from './aiProviders';
+import { createAIService, GeminiService } from './aiProviders';
 
 // AI Service for health consultations
 class AIService {
@@ -51,12 +51,7 @@ Example approach: "I understand your concern about [symptom]. To better help you
         try {
             console.log('Sending message to AI provider:', this.provider.constructor.name);
 
-            // For mock service, use its own method
-            if (this.provider instanceof MockAIService) {
-                return await this.provider.sendMessage(message, conversationHistory);
-            }
-
-            // For real AI providers, prepare the conversation with system prompt
+            // For Gemini AI provider, prepare the conversation with system prompt
             const messages = [
                 { role: 'system', content: this.systemPrompt }
             ];

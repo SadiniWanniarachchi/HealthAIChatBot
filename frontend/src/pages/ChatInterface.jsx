@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -21,6 +21,7 @@ import ReactMarkdown from 'react-markdown';
 const ChatInterface = () => {
     const { sessionId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
     const [currentSession, setCurrentSession] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -31,11 +32,68 @@ const ChatInterface = () => {
     const [userInfo, setUserInfo] = useState({ age: '', gender: '' });
     const messagesEndRef = useRef(null);
 
+    // Debug function to log state changes
+    const debugLog = (action, data) => {
+        console.log(`[ChatInterface] ${action}:`, data);
+    };
+
     useEffect(() => {
-        if (sessionId) {
+        debugLog('useEffect triggered', {
+            sessionId,
+            hasLocationState: !!location.state?.existingSession,
+            messagesLength: messages.length
+        });
+
+        // Ensure user is authenticated
+        if (!user) {
+            toast.error('Please log in to access chat interface');
+            navigate('/login');
+            return;
+        }
+
+        // Check if we have existing session data from navigation state (from history page)
+        if (location.state?.existingSession) {
+            const existingSession = location.state.existingSession;
+            const existingMessages = location.state.messages || [];
+
+            // Validate that the session belongs to the current user
+            const sessionUserEmail = existingSession.userInfo?.email;
+            const currentUserEmail = user.email;
+
+            if (sessionUserEmail && currentUserEmail && sessionUserEmail !== currentUserEmail) {
+                toast.error('Access denied. This conversation does not belong to you.');
+                console.error('Attempted to access session belonging to different user:', {
+                    sessionUser: sessionUserEmail,
+                    currentUser: currentUserEmail,
+                    sessionId: existingSession.sessionId
+                });
+                navigate('/dashboard');
+                return;
+            }
+
+            debugLog('Loading from location.state', {
+                sessionId: existingSession.sessionId,
+                messagesCount: existingMessages.length,
+                userEmail: currentUserEmail
+            });
+
+            setCurrentSession(existingSession);
+            setMessages(existingMessages);
+            setUserInfo(existingSession.userInfo || { age: '', gender: '' });
+            setShowInitialForm(false);
+
+            console.log('Loaded existing session from state:', existingSession);
+            console.log('Loaded existing messages:', existingMessages);
+
+            // Clear the navigation state to prevent reloading on re-renders
+            window.history.replaceState({}, document.title);
+
+        } else if (sessionId && !sessionId.startsWith('local_') && messages.length === 0) {
+            // Only load from backend if we don't have existing session data and messages
+            debugLog('Loading from backend', { sessionId, userEmail: user.email });
             loadExistingSession();
         }
-    }, [sessionId]);
+    }, [sessionId, location.state?.existingSession]);
 
     useEffect(() => {
         scrollToBottom();
@@ -50,11 +108,24 @@ const ChatInterface = () => {
             setIsLoading(true);
             const response = await diagnosisAPI.getDiagnosisSession(sessionId);
             setCurrentSession(response.diagnosis);
-            setMessages(response.diagnosis.chatMessages || []);
+
+            // Only update messages if we don't already have messages in state
+            // This prevents overwriting messages loaded from navigation state
+            if (messages.length === 0) {
+                setMessages(response.diagnosis.chatMessages || []);
+                console.log('Loaded messages from backend:', response.diagnosis.chatMessages);
+            } else {
+                console.log('Keeping existing messages, not loading from backend');
+            }
+
             setShowInitialForm(false);
         } catch (error) {
-            toast.error('Session not found');
-            navigate('/dashboard');
+            console.warn('Session not found in backend:', error);
+            // Don't navigate away if we have messages, might be a local session
+            if (messages.length === 0) {
+                toast.error('Session not found');
+                navigate('/dashboard');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -76,23 +147,7 @@ const ChatInterface = () => {
         try {
             setIsLoading(true);
 
-            // Try to create backend session, but don't block if it fails
-            let sessionData = null;
-            try {
-                const response = await diagnosisAPI.startDiagnosis(userInfo);
-                setCurrentSession(response.diagnosis);
-                sessionData = response;
-                // Update URL with session ID
-                navigate(`/chat/${response.sessionId}`, { replace: true });
-            } catch (backendError) {
-                console.warn('Backend session creation failed, continuing with local session:', backendError);
-                // Create a local session ID for UI purposes
-                const localSessionId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                setCurrentSession({ sessionId: localSessionId });
-                navigate(`/chat/${localSessionId}`, { replace: true });
-            }
-
-            // Initialize with AI welcome message
+            // Initialize with AI welcome message first
             const welcomeMessage = {
                 message: `Hello! I'm your AI health assistant. I understand you're ${userInfo.age} years old and identify as ${userInfo.gender}. I'm here to help discuss your health concerns and provide general guidance.\n\nPlease tell me what's bothering you today or what symptoms you're experiencing. Remember, I'm here to provide information and support, but I cannot replace professional medical care.\n\nWhat brings you here today?`,
                 sender: 'bot',
@@ -102,6 +157,27 @@ const ChatInterface = () => {
 
             setMessages([welcomeMessage]);
             setShowInitialForm(false);
+
+            // Try to create backend session, but don't block if it fails
+            let sessionData = null;
+            try {
+                const response = await diagnosisAPI.startDiagnosis(userInfo);
+                setCurrentSession(response.diagnosis);
+                sessionData = response;
+                // Update URL with session ID - use setTimeout to ensure messages are set first
+                setTimeout(() => {
+                    navigate(`/chat/${response.sessionId}`, { replace: true });
+                }, 100);
+            } catch (backendError) {
+                console.warn('Backend session creation failed, continuing with local session:', backendError);
+                // Create a local session ID for UI purposes
+                const localSessionId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                setCurrentSession({ sessionId: localSessionId });
+                setTimeout(() => {
+                    navigate(`/chat/${localSessionId}`, { replace: true });
+                }, 100);
+            }
+
             toast.success('Health consultation started!');
 
         } catch (error) {
@@ -124,18 +200,47 @@ const ChatInterface = () => {
             messageType: 'text'
         };
 
-        // Add user message immediately
+        // Add user message immediately to UI
         setMessages(prev => [...prev, userMessage]);
         const currentInput = inputMessage.trim();
         setInputMessage('');
         setIsTyping(true);
 
         try {
-            // Use AI service for real-time chat
+            // If we have a backend session, use backend API for proper message saving
+            if (currentSession && !currentSession.sessionId.startsWith('local_')) {
+                try {
+                    // Send message to backend - this will save both user message and generate bot response
+                    const response = await diagnosisAPI.sendMessage(currentSession.sessionId, {
+                        message: currentInput,
+                        symptoms: []
+                    });
+
+                    // Simulate realistic typing delay
+                    const typingDelay = Math.min(response.botResponse.message.length * 30, 3000);
+
+                    setTimeout(() => {
+                        setMessages(prev => [...prev, {
+                            message: response.botResponse.message,
+                            sender: 'bot',
+                            timestamp: new Date(),
+                            messageType: response.botResponse.messageType || 'text'
+                        }]);
+                        setIsTyping(false);
+                    }, typingDelay);
+
+                    return; // Exit early since backend handled everything
+                } catch (backendError) {
+                    console.warn('Backend message sending failed, falling back to local AI:', backendError);
+                    // Continue to local AI service below
+                }
+            }
+
+            // Fallback to local AI service (for local sessions or backend failures)
             const aiResponse = await aiService.sendMessage(currentInput, messages);
 
             // Simulate realistic typing delay
-            const typingDelay = Math.min(aiResponse.message.length * 30, 3000); // 30ms per character, max 3 seconds
+            const typingDelay = Math.min(aiResponse.message.length * 30, 3000);
 
             setTimeout(() => {
                 setMessages(prev => [...prev, {
@@ -145,15 +250,6 @@ const ChatInterface = () => {
                     messageType: aiResponse.messageType
                 }]);
                 setIsTyping(false);
-
-                // If we have a backend session, also save the conversation
-                if (currentSession) {
-                    diagnosisAPI.sendMessage(currentSession.sessionId, {
-                        message: currentInput
-                    }).catch(error => {
-                        console.warn('Failed to save to backend:', error);
-                    });
-                }
             }, typingDelay);
 
         } catch (error) {
@@ -176,70 +272,77 @@ const ChatInterface = () => {
         try {
             setIsLoading(true);
 
-            // Use AI service to generate comprehensive assessment
-            const aiAssessment = await aiService.generateHealthAssessment(
-                [], // You can extract symptoms from messages if needed
-                userInfo,
-                messages
-            );
-
-            // Add diagnosis result message
-            const diagnosisMessage = {
-                message: formatDiagnosisResult({
-                    primaryCondition: {
-                        name: "Health Consultation Summary",
-                        confidence: aiAssessment.confidence,
-                        description: aiAssessment.assessment
-                    },
-                    recommendations: aiAssessment.recommendations,
-                    urgencyLevel: aiAssessment.urgencyLevel
-                }),
-                sender: 'bot',
-                timestamp: new Date(),
-                messageType: 'diagnosis'
-            };
-
-            const updatedMessages = [...messages, diagnosisMessage];
-            setMessages(updatedMessages);
-            toast.success('Health assessment completed!');
-
-            // Store completed session locally if it's a local session
-            if (currentSession && currentSession.sessionId.startsWith('local_')) {
-                const completedSession = {
-                    sessionId: currentSession.sessionId,
-                    createdAt: new Date().toISOString(),
-                    completedAt: new Date().toISOString(),
-                    userInfo: userInfo,
-                    messages: updatedMessages,
-                    diagnosis: {
-                        primaryCondition: {
-                            name: "Health Consultation Summary",
-                            confidence: aiAssessment.confidence,
-                            description: aiAssessment.assessment
-                        },
-                        recommendations: aiAssessment.recommendations,
-                        urgencyLevel: aiAssessment.urgencyLevel
-                    },
-                    symptoms: extractSymptomsFromMessages(updatedMessages)
-                };
-
-                // Save to localStorage
-                const existingSessions = JSON.parse(localStorage.getItem('completedSessions') || '[]');
-                const updatedSessions = [completedSession, ...existingSessions.filter(s => s.sessionId !== completedSession.sessionId)];
-                localStorage.setItem('completedSessions', JSON.stringify(updatedSessions));
-                console.log('Saved completed session locally:', completedSession.sessionId);
+            // Check if user is logged in
+            if (!user) {
+                toast.error('Please log in to save your consultation');
+                return;
             }
 
-            // Also try to save to backend if session exists
-            if (currentSession && !currentSession.sessionId.startsWith('local_')) {
+            // If this is a local session, we need to create a backend session first
+            if (!currentSession || currentSession.sessionId.startsWith('local_')) {
+                try {
+                    console.log('Creating backend session for local conversation...');
+
+                    // Create a new backend session
+                    const mongoResponse = await diagnosisAPI.startDiagnosis({
+                        age: userInfo.age,
+                        gender: userInfo.gender,
+                        firstName: user.firstName,
+                        lastName: user.lastName
+                    });
+
+                    // Save all the conversation messages to the backend session
+                    for (const message of messages) {
+                        if (message.sender === 'user') {
+                            await diagnosisAPI.sendMessage(mongoResponse.sessionId, {
+                                message: message.message,
+                                symptoms: []
+                            });
+                        }
+                    }
+
+                    // Update current session to use the backend session
+                    setCurrentSession({
+                        sessionId: mongoResponse.sessionId,
+                        createdAt: new Date().toISOString(),
+                        userInfo: userInfo,
+                        isLocal: false
+                    });
+
+                    // Complete the diagnosis
+                    await diagnosisAPI.completeDiagnosis(mongoResponse.sessionId, {
+                        medicalHistory: [],
+                        currentMedications: []
+                    });
+
+                    console.log('Saved local conversation to MongoDB:', mongoResponse.sessionId);
+                    toast.success('Conversation saved and assessment completed!');
+
+                } catch (error) {
+                    console.error('Failed to save local conversation:', error);
+                    toast.error('Failed to save conversation. Please try again.');
+                }
+            } else {
+                // Complete the existing diagnosis session in MongoDB
                 try {
                     await diagnosisAPI.completeDiagnosis(currentSession.sessionId, {
                         medicalHistory: [],
                         currentMedications: []
                     });
-                    console.log('Saved completed session to backend:', currentSession.sessionId);
-                } catch (backendError) {
-                    console.warn('Backend diagnosis save failed:', backendError);
+
+                    console.log('Completed diagnosis session:', currentSession.sessionId);
+                    toast.success('Health assessment completed and saved to your history');
+
+                    // Update current session status
+                    setCurrentSession({
+                        ...currentSession,
+                        completedAt: new Date().toISOString(),
+                        status: 'completed'
+                    });
+
+                } catch (error) {
+                    console.error('Failed to complete diagnosis:', error);
+                    toast.error('Failed to complete assessment. Please try again.');
                 }
             }
 
@@ -290,31 +393,53 @@ const ChatInterface = () => {
 
     const formatDiagnosisResult = (diagnosis) => {
         let result = `## 🏥 Health Assessment Complete\n\n`;
+        result += `---\n\n`;
 
         if (diagnosis.primaryCondition) {
-            result += `**Primary Assessment:** ${diagnosis.primaryCondition.name}\n`;
-            result += `**Confidence Level:** ${diagnosis.primaryCondition.confidence}%\n`;
-            result += `**Description:** ${diagnosis.primaryCondition.description}\n\n`;
+            result += `### 📊 Primary Assessment\n\n`;
+            result += `**Condition:** ${diagnosis.primaryCondition.name}\n\n`;
+            result += `**Confidence Level:** ${diagnosis.primaryCondition.confidence}%\n\n`;
+            result += `**Description:**\n${diagnosis.primaryCondition.description}\n\n`;
+            result += `---\n\n`;
+        }
+
+        if (diagnosis.alternativeConditions && diagnosis.alternativeConditions.length > 0) {
+            result += `### 🔍 Alternative Considerations\n\n`;
+            diagnosis.alternativeConditions.forEach((condition, index) => {
+                result += `**${index + 1}. ${condition.name}** (${condition.confidence}% confidence)\n`;
+                if (condition.description) {
+                    result += `   ${condition.description}\n\n`;
+                } else {
+                    result += `\n`;
+                }
+            });
+            result += `---\n\n`;
         }
 
         if (diagnosis.recommendations && diagnosis.recommendations.length > 0) {
-            result += `**📋 Recommendations:**\n`;
+            result += `### 📋 Medical Recommendations\n\n`;
             diagnosis.recommendations.forEach((rec, index) => {
-                result += `${index + 1}. ${rec}\n`;
+                result += `**${index + 1}.**  ${rec}\n\n`;
             });
-            result += `\n`;
+            result += `---\n\n`;
         }
 
-        result += `**⚠️ Important Medical Disclaimer:**\n`;
-        result += `This assessment is for informational purposes only and should not replace professional medical advice. `;
+        result += `### ⚠️ Important Medical Disclaimer\n\n`;
+        result += `> This assessment is for **informational purposes only** and should not replace professional medical advice.\n\n`;
 
         if (diagnosis.urgencyLevel === 'emergency') {
-            result += `**🚨 URGENT: Please seek immediate medical attention.**`;
+            result += `### 🚨 URGENT NOTICE\n\n`;
+            result += `**Please seek immediate medical attention.**\n\n`;
         } else if (diagnosis.urgencyLevel === 'high') {
-            result += `**Please consult with a healthcare provider soon.**`;
+            result += `### ⚡ High Priority\n\n`;
+            result += `**Please consult with a healthcare provider soon.**\n\n`;
         } else {
-            result += `Please consult with a healthcare provider for proper diagnosis and treatment.`;
+            result += `### 💡 Next Steps\n\n`;
+            result += `Please consult with a healthcare provider for proper diagnosis and treatment.\n\n`;
         }
+
+        result += `---\n\n`;
+        result += `*Assessment completed at ${new Date().toLocaleString()}*`;
 
         return result;
     };
@@ -621,13 +746,28 @@ const ChatInterface = () => {
 
                                             {/* Message */}
                                             <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                                                <div className={`rounded-lg px-3 sm:px-4 py-2 sm:py-3 max-w-xs sm:max-w-md lg:max-w-2xl ${message.sender === 'user'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-white border border-gray-200 text-gray-900'
+                                                <div className={`rounded-lg px-3 sm:px-4 py-2 sm:py-3 ${message.messageType === 'diagnosis'
+                                                    ? 'max-w-full lg:max-w-4xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 shadow-lg'
+                                                    : `max-w-xs sm:max-w-md lg:max-w-2xl ${message.sender === 'user'
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-white border border-gray-200 text-gray-900'
+                                                    }`
                                                     }`}>
                                                     {message.messageType === 'diagnosis' ? (
-                                                        <div className="prose prose-sm max-w-none">
-                                                            <ReactMarkdown>{message.message}</ReactMarkdown>
+                                                        <div className="prose prose-sm max-w-none diagnosis-content">
+                                                            <ReactMarkdown
+                                                                components={{
+                                                                    h2: ({ node, ...props }) => <h2 className="text-xl font-bold text-blue-700 mb-4 pb-2 border-b-2 border-blue-200" {...props} />,
+                                                                    h3: ({ node, ...props }) => <h3 className="text-lg font-semibold text-gray-800 mb-3 mt-4" {...props} />,
+                                                                    p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-700" {...props} />,
+                                                                    strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900 mr-2" {...props} />,
+                                                                    hr: ({ node, ...props }) => <hr className="my-4 border-gray-300" {...props} />,
+                                                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-yellow-400 bg-yellow-50 pl-4 py-2 my-3 italic text-gray-700" {...props} />,
+                                                                    em: ({ node, ...props }) => <em className="text-sm text-gray-500" {...props} />
+                                                                }}
+                                                            >
+                                                                {message.message}
+                                                            </ReactMarkdown>
                                                         </div>
                                                     ) : (
                                                         <p className="text-sm leading-relaxed break-words">{message.message}</p>

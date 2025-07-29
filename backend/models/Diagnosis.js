@@ -96,6 +96,13 @@ const diagnosisSchema = new mongoose.Schema({
     completedAt: {
         type: Date,
         default: null
+    },
+    userInfo: {
+        firstName: String,
+        lastName: String,
+        email: String,
+        age: Number,
+        gender: String
     }
 }, {
     timestamps: true

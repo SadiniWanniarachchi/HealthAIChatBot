@@ -63,6 +63,15 @@ export const AuthProvider = ({ children }) => {
     // Check for existing token on app load
     useEffect(() => {
         const initializeAuth = async () => {
+            // Clean up old localStorage session data that should now be in MongoDB
+            try {
+                localStorage.removeItem('completedSessions');
+                localStorage.removeItem('syncedSessions');
+                console.log('Cleaned up old localStorage session data');
+            } catch (error) {
+                console.warn('Error cleaning up old session data:', error);
+            }
+
             // Check both localStorage and sessionStorage for token
             let token = localStorage.getItem('token') || sessionStorage.getItem('token');
             let user = localStorage.getItem('user') || sessionStorage.getItem('user');
@@ -141,10 +150,11 @@ export const AuthProvider = ({ children }) => {
 
             const response = await authAPI.register(userData);
 
-            // Store token and user in localStorage
+            // Store token and user data in localStorage after successful registration
             localStorage.setItem('token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
 
+            // Set user as logged in
             dispatch({
                 type: 'LOGIN_SUCCESS',
                 payload: {
@@ -171,6 +181,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('rememberMe');
+            localStorage.removeItem('completedSessions');
+            localStorage.removeItem('syncedSessions');
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('user');
             dispatch({ type: 'LOGOUT' });
