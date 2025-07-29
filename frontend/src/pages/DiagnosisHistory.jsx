@@ -55,19 +55,19 @@ const DiagnosisHistory = () => {
             // Get local completed sessions from localStorage
             const localSessions = JSON.parse(localStorage.getItem('completedSessions') || '[]');
 
-        // Convert local sessions to diagnosis format
-        const localDiagnoses = localSessions.map(session => ({
-            sessionId: session.sessionId,
-            createdAt: session.createdAt,
-            completedAt: session.completedAt,
-            userInfo: session.userInfo,
-            diagnosis: session.diagnosis,
-            symptoms: session.symptoms || [],
-            urgencyLevel: session.diagnosis?.urgencyLevel || 'low',
-            primaryCondition: session.diagnosis?.primaryCondition?.name || 'Health Consultation',
-            recommendations: session.diagnosis?.recommendations || [],
-            isLocal: true // Mark as local session
-        }));            // Combine backend and local diagnoses, avoiding duplicates
+            // Convert local sessions to diagnosis format
+            const localDiagnoses = localSessions.map(session => ({
+                sessionId: session.sessionId,
+                createdAt: session.createdAt,
+                completedAt: session.completedAt,
+                userInfo: session.userInfo,
+                diagnosis: session.diagnosis,
+                symptoms: session.symptoms || [],
+                urgencyLevel: session.diagnosis?.urgencyLevel || 'low',
+                primaryCondition: session.diagnosis?.primaryCondition?.name || 'Health Consultation',
+                recommendations: session.diagnosis?.recommendations || [],
+                isLocal: true // Mark as local session
+            }));            // Combine backend and local diagnoses, avoiding duplicates
             const backendSessionIds = backendDiagnoses.map(d => d.sessionId);
             const uniqueLocalDiagnoses = localDiagnoses.filter(ld => !backendSessionIds.includes(ld.sessionId));
 
