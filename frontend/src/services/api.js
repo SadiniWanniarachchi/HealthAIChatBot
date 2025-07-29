@@ -167,6 +167,11 @@ export const diagnosisAPI = {
     getDiagnosisSession: async (sessionId) => {
         const response = await api.get(`/diagnosis/${sessionId}`);
         return response.data;
+    },
+
+    deleteDiagnosis: async (sessionId) => {
+        const response = await api.delete(`/diagnosis/${sessionId}`);
+        return response.data;
     }
 };
 

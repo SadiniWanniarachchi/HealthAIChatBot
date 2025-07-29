@@ -14,6 +14,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
+import { aiService } from '../services/aiService';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 
@@ -74,17 +75,38 @@ const ChatInterface = () => {
 
         try {
             setIsLoading(true);
-            const response = await diagnosisAPI.startDiagnosis(userInfo);
-            setCurrentSession(response.diagnosis);
-            setMessages(response.diagnosis.chatMessages || []);
+
+            // Try to create backend session, but don't block if it fails
+            let sessionData = null;
+            try {
+                const response = await diagnosisAPI.startDiagnosis(userInfo);
+                setCurrentSession(response.diagnosis);
+                sessionData = response;
+                // Update URL with session ID
+                navigate(`/chat/${response.sessionId}`, { replace: true });
+            } catch (backendError) {
+                console.warn('Backend session creation failed, continuing with local session:', backendError);
+                // Create a local session ID for UI purposes
+                const localSessionId = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                setCurrentSession({ sessionId: localSessionId });
+                navigate(`/chat/${localSessionId}`, { replace: true });
+            }
+
+            // Initialize with AI welcome message
+            const welcomeMessage = {
+                message: `Hello! I'm your AI health assistant. I understand you're ${userInfo.age} years old and identify as ${userInfo.gender}. I'm here to help discuss your health concerns and provide general guidance.\n\nPlease tell me what's bothering you today or what symptoms you're experiencing. Remember, I'm here to provide information and support, but I cannot replace professional medical care.\n\nWhat brings you here today?`,
+                sender: 'bot',
+                timestamp: new Date(),
+                messageType: 'text'
+            };
+
+            setMessages([welcomeMessage]);
             setShowInitialForm(false);
+            toast.success('Health consultation started!');
 
-            // Update URL with session ID
-            navigate(`/chat/${response.sessionId}`, { replace: true });
-
-            toast.success('New health consultation started!');
         } catch (error) {
             toast.error('Failed to start session');
+            console.error('Session start error:', error);
         } finally {
             setIsLoading(false);
         }
@@ -93,7 +115,7 @@ const ChatInterface = () => {
     const sendMessage = async (e) => {
         e.preventDefault();
 
-        if (!inputMessage.trim() || !currentSession) return;
+        if (!inputMessage.trim()) return;
 
         const userMessage = {
             message: inputMessage.trim(),
@@ -104,57 +126,167 @@ const ChatInterface = () => {
 
         // Add user message immediately
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = inputMessage.trim();
         setInputMessage('');
         setIsTyping(true);
 
         try {
-            const response = await diagnosisAPI.sendMessage(currentSession.sessionId, {
-                message: inputMessage.trim()
-            });
+            // Use AI service for real-time chat
+            const aiResponse = await aiService.sendMessage(currentInput, messages);
 
-            // Simulate typing delay
+            // Simulate realistic typing delay
+            const typingDelay = Math.min(aiResponse.message.length * 30, 3000); // 30ms per character, max 3 seconds
+
             setTimeout(() => {
                 setMessages(prev => [...prev, {
-                    message: response.botResponse.message,
+                    message: aiResponse.message,
                     sender: 'bot',
                     timestamp: new Date(),
-                    messageType: response.botResponse.messageType
+                    messageType: aiResponse.messageType
                 }]);
                 setIsTyping(false);
-            }, 1000 + Math.random() * 1000);
+
+                // If we have a backend session, also save the conversation
+                if (currentSession) {
+                    diagnosisAPI.sendMessage(currentSession.sessionId, {
+                        message: currentInput
+                    }).catch(error => {
+                        console.warn('Failed to save to backend:', error);
+                    });
+                }
+            }, typingDelay);
 
         } catch (error) {
             setIsTyping(false);
-            toast.error('Failed to send message');
-            // Remove user message on error
-            setMessages(prev => prev.slice(0, -1));
+            toast.error('Failed to get AI response. Please try again.');
+
+            // Add error message from AI
+            setTimeout(() => {
+                setMessages(prev => [...prev, {
+                    message: "I apologize, but I'm having trouble responding right now. Please try again, and if you're experiencing a medical emergency, contact emergency services immediately.",
+                    sender: 'bot',
+                    timestamp: new Date(),
+                    messageType: 'error'
+                }]);
+            }, 500);
         }
     };
 
     const completeDiagnosis = async () => {
         try {
             setIsLoading(true);
-            const response = await diagnosisAPI.completeDiagnosis(currentSession.sessionId, {
-                medicalHistory: [], // Could be collected from user
-                currentMedications: []
-            });
+
+            // Use AI service to generate comprehensive assessment
+            const aiAssessment = await aiService.generateHealthAssessment(
+                [], // You can extract symptoms from messages if needed
+                userInfo,
+                messages
+            );
 
             // Add diagnosis result message
             const diagnosisMessage = {
-                message: formatDiagnosisResult(response.diagnosis),
+                message: formatDiagnosisResult({
+                    primaryCondition: {
+                        name: "Health Consultation Summary",
+                        confidence: aiAssessment.confidence,
+                        description: aiAssessment.assessment
+                    },
+                    recommendations: aiAssessment.recommendations,
+                    urgencyLevel: aiAssessment.urgencyLevel
+                }),
                 sender: 'bot',
                 timestamp: new Date(),
                 messageType: 'diagnosis'
             };
 
-            setMessages(prev => [...prev, diagnosisMessage]);
-            toast.success('Diagnosis completed successfully!');
+            const updatedMessages = [...messages, diagnosisMessage];
+            setMessages(updatedMessages);
+            toast.success('Health assessment completed!');
+
+            // Store completed session locally if it's a local session
+            if (currentSession && currentSession.sessionId.startsWith('local_')) {
+                const completedSession = {
+                    sessionId: currentSession.sessionId,
+                    status: 'completed',
+                    createdAt: new Date().toISOString(),
+                    completedAt: new Date().toISOString(),
+                    userInfo: userInfo,
+                    messages: updatedMessages,
+                    diagnosis: {
+                        primaryCondition: {
+                            name: "Health Consultation Summary",
+                            confidence: aiAssessment.confidence,
+                            description: aiAssessment.assessment
+                        },
+                        recommendations: aiAssessment.recommendations,
+                        urgencyLevel: aiAssessment.urgencyLevel
+                    },
+                    symptoms: extractSymptomsFromMessages(updatedMessages)
+                };
+
+                // Save to localStorage
+                const existingSessions = JSON.parse(localStorage.getItem('completedSessions') || '[]');
+                const updatedSessions = [completedSession, ...existingSessions.filter(s => s.sessionId !== completedSession.sessionId)];
+                localStorage.setItem('completedSessions', JSON.stringify(updatedSessions));
+                console.log('Saved completed session locally:', completedSession.sessionId);
+            }
+
+            // Also try to save to backend if session exists
+            if (currentSession && !currentSession.sessionId.startsWith('local_')) {
+                try {
+                    await diagnosisAPI.completeDiagnosis(currentSession.sessionId, {
+                        medicalHistory: [],
+                        currentMedications: []
+                    });
+                    console.log('Saved completed session to backend:', currentSession.sessionId);
+                } catch (backendError) {
+                    console.warn('Backend diagnosis save failed:', backendError);
+                }
+            }
 
         } catch (error) {
-            toast.error('Failed to complete diagnosis');
+            toast.error('Failed to complete assessment');
+            console.error('Assessment error:', error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Helper function to extract symptoms from conversation messages
+    const extractSymptomsFromMessages = (messages) => {
+        const symptoms = [];
+        messages.forEach(msg => {
+            if (msg.sender === 'user') {
+                // Simple keyword extraction for common symptoms
+                const symptomKeywords = [
+                    'headache', 'fever', 'pain', 'cough', 'sore throat', 'nausea',
+                    'fatigue', 'dizziness', 'chest pain', 'shortness of breath',
+                    'stomach ache', 'back pain', 'joint pain', 'rash', 'vomiting'
+                ];
+
+                symptomKeywords.forEach(keyword => {
+                    if (msg.message.toLowerCase().includes(keyword) &&
+                        !symptoms.some(s => s.name.toLowerCase().includes(keyword))) {
+                        symptoms.push({
+                            name: keyword.charAt(0).toUpperCase() + keyword.slice(1),
+                            severity: 'mild', // Default severity
+                            duration: 'recent'
+                        });
+                    }
+                });
+            }
+        });
+
+        // If no symptoms found, add a generic one
+        if (symptoms.length === 0) {
+            symptoms.push({
+                name: 'General health concern',
+                severity: 'mild',
+                duration: 'recent'
+            });
+        }
+
+        return symptoms;
     };
 
     const formatDiagnosisResult = (diagnosis) => {
@@ -215,108 +347,252 @@ const ChatInterface = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b border-gray-200">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-14 sm:h-16">
-                        <div className="flex items-center min-w-0 flex-1">
-                            <button
-                                onClick={() => navigate('/dashboard')}
-                                className="mr-2 sm:mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0"
-                            >
-                                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-                            <HeartPulse className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
-                            <div className="ml-2 sm:ml-3 min-w-0">
-                                <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                                    AI Health Assistant
-                                </h1>
-                                <p className="text-xs sm:text-sm text-gray-500 truncate">
-                                    {currentSession ? `Session ${currentSession.sessionId.slice(-8)}` : 'New Consultation'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 flex-shrink-0">
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 bg-green-400 rounded-full mr-1 sm:mr-2"></div>
-                                <span className="hidden sm:inline">Online</span>
-                                <div className="w-2 h-2 bg-green-400 rounded-full sm:hidden"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <>
             {/* Initial Form */}
             {showInitialForm && (
-                <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 max-w-md w-full mx-auto"
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex relative overflow-hidden">
+                    {/* Animated Background Elements */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        <motion.div
+                            animate={{
+                                x: [0, 100, 0],
+                                y: [0, -50, 0],
+                            }}
+                            transition={{
+                                duration: 20,
+                                repeat: Infinity,
+                                ease: "linear"
+                            }}
+                            className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-300/20 to-cyan-300/20 rounded-full blur-3xl"
+                        />
+                        <motion.div
+                            animate={{
+                                x: [0, -100, 0],
+                                y: [0, 100, 0],
+                            }}
+                            transition={{
+                                duration: 25,
+                                repeat: Infinity,
+                                ease: "linear"
+                            }}
+                            className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-r from-cyan-300/20 to-blue-300/20 rounded-full blur-3xl"
+                        />
+                    </div>
+
+                    {/* Back Button */}
+                    <motion.button
+                        onClick={() => navigate('/dashboard')}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="absolute top-6 left-6 flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-all duration-300 group bg-white/80 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-sm hover:shadow-md z-20 cursor-pointer"
                     >
-                        <div className="text-center mb-4 sm:mb-6">
-                            <HeartPulse className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Start Health Consultation</h2>
-                            <p className="text-sm sm:text-base text-gray-600 mt-2">
-                                I need some basic information to provide you with the best possible health assessment.
-                            </p>
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
+                        <span className="font-medium text-sm">Back</span>
+                    </motion.button>
+
+                    <div className="flex w-full min-h-screen">
+                        {/* Left Side - Form (2/3 width) */}
+                        <div className="w-full lg:w-2/3 flex items-center justify-center px-6 sm:px-8 lg:px-16 xl:px-20 relative mt-14 mb-10 z-10">
+                            <motion.div
+                                initial={{ opacity: 0, x: -50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.7, delay: 0.2 }}
+                                className="w-full max-w-md mx-auto"
+                            >
+                                {/* Enhanced Form */}
+                                <motion.div
+                                    className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 sm:p-12 relative"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.6, delay: 0.3 }}
+                                >
+                                    {/* Glassmorphism effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-white/10 rounded-3xl"></div>
+
+                                    <div className="text-center mb-8 relative z-10">
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 30 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.8, delay: 0.4 }}
+                                        >
+                                            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                                <HeartPulse className="h-8 w-8 text-blue-600" />
+                                            </div>
+                                            <h2 className="text-3xl font-bold text-gray-900 mb-3">Start Health Consultation</h2>
+                                            <p className="text-gray-600 leading-relaxed">
+                                                Let's gather some basic information to provide you with personalized health insights and accurate medical assistance.
+                                            </p>
+                                        </motion.div>
+                                    </div>
+
+                                    <form onSubmit={startNewSession} className="space-y-6 relative z-10">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                                What's your age?
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="120"
+                                                value={userInfo.age}
+                                                onChange={(e) => setUserInfo(prev => ({ ...prev, age: e.target.value }))}
+                                                className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 text-base transition-all duration-300 bg-white/50 backdrop-blur-sm hover:border-blue-300"
+                                                placeholder="Enter your age"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                                What's your gender?
+                                            </label>
+                                            <select
+                                                value={userInfo.gender}
+                                                onChange={(e) => setUserInfo(prev => ({ ...prev, gender: e.target.value }))}
+                                                className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 text-base transition-all duration-300 bg-white/50 backdrop-blur-sm hover:border-blue-300"
+                                                required
+                                            >
+                                                <option value="">Select your gender</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+
+                                        <motion.button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-4 px-6 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl relative overflow-hidden text-base cursor-pointer"
+                                        >
+                                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-700"></div>
+                                            {isLoading ? (
+                                                <>
+                                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                                    <span>Starting Consultation...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <HeartPulse className="h-5 w-5" />
+                                                    <span>Start Health Consultation</span>
+                                                </>
+                                            )}
+                                        </motion.button>
+                                    </form>
+
+
+                                </motion.div>
+                            </motion.div>
                         </div>
 
-                        <form onSubmit={startNewSession} className="space-y-3 sm:space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    What's your age?
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="120"
-                                    value={userInfo.age}
-                                    onChange={(e) => setUserInfo(prev => ({ ...prev, age: e.target.value }))}
-                                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-                                    placeholder="Enter your age"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    What's your gender?
-                                </label>
-                                <select
-                                    value={userInfo.gender}
-                                    onChange={(e) => setUserInfo(prev => ({ ...prev, gender: e.target.value }))}
-                                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-                                    required
-                                >
-                                    <option value="">Select your gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium transition-colors disabled:opacity-50"
+                        {/* Right Side - Medical Image (1/3 width) */}
+                        <div className="hidden lg:block w-1/3 relative">
+                            <motion.div
+                                initial={{ opacity: 0, x: 50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 1, delay: 0.2 }}
+                                className="absolute inset-0 h-full w-full"
                             >
-                                {isLoading ? (
-                                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                                ) : (
-                                    'Start Consultation'
-                                )}
-                            </button>
-                        </form>
-                    </motion.div>
+                                {/* Professional Medical Consultation Background Image */}
+                                <div
+                                    className="h-full w-full bg-cover bg-center bg-no-repeat relative"
+                                    style={{
+                                        backgroundImage: `url('https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=800&h=1200&fit=crop&crop=center')`
+                                    }}
+                                >
+                                    {/* Elegant Gradient Overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/70 via-blue-800/50 to-cyan-900/60"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+
+                                    {/* Professional Medical Badge */}
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 1.5, duration: 0.8 }}
+                                        className="absolute top-8 left-6 right-6 bg-white/15 backdrop-blur-md rounded-2xl p-6 border border-white/20"
+                                    >
+                                        <div className="text-center">
+                                            <HeartPulse className="h-8 w-8 text-white mx-auto mb-3" />
+                                            <h3 className="text-white font-semibold text-lg mb-2">AI Health Assistant</h3>
+                                            <p className="text-white/80 text-sm leading-relaxed">
+                                                Start your personalized health consultation with our advanced medical AI
+                                            </p>
+                                        </div>
+                                    </motion.div>
+
+                                    {/* Medical Features */}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 30 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 2, duration: 0.8 }}
+                                        className="absolute bottom-8 left-6 right-6 space-y-4"
+                                    >
+                                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                                            <div className="flex items-center text-white">
+                                                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                                                    <CheckCircle className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-sm">Instant Analysis</p>
+                                                    <p className="text-xs text-white/70">Get immediate health insights</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                                            <div className="flex items-center text-white">
+                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                                                    <Bot className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-sm">AI Powered</p>
+                                                    <p className="text-xs text-white/70">Advanced medical knowledge</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
                 </div>
             )}
 
             {/* Chat Interface */}
             {!showInitialForm && (
-                <>
+                <div className="min-h-screen bg-gray-50 flex flex-col">
+                    {/* Header */}
+                    <div className="bg-white shadow-sm border-b border-gray-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-14 sm:h-16">
+                                <div className="flex items-center min-w-0 flex-1">
+                                    <button
+                                        onClick={() => navigate('/dashboard')}
+                                        className="mr-2 sm:mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0"
+                                    >
+                                        <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    </button>
+                                    <HeartPulse className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
+                                    <div className="ml-2 sm:ml-3 min-w-0">
+                                        <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                                            AI Health Assistant
+                                        </h1>
+                                        <p className="text-xs sm:text-sm text-gray-500 truncate">
+                                            {currentSession ? `Session #${currentSession.sessionId.slice(-8).toUpperCase()}` : 'New Consultation'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center text-xs sm:text-sm text-gray-500 flex-shrink-0">
+                                    <div className="flex items-center">
+                                        <div className="w-2 h-2 bg-green-400 rounded-full mr-1 sm:mr-2"></div>
+                                        <span className="hidden sm:inline">Online</span>
+                                        <div className="w-2 h-2 bg-green-400 rounded-full sm:hidden"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {/* Messages */}
                     <div className="flex-1 overflow-y-auto">
                         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -397,7 +673,7 @@ const ChatInterface = () => {
                     {/* Input Area */}
                     <div className="bg-white border-t border-gray-200">
                         <div className="max-w-4xl mx-auto px-4 py-4">
-                            {currentSession?.symptoms?.length >= 3 && currentSession?.status !== 'completed' && (
+                            {messages.length >= 6 && (
                                 <div className="mb-4">
                                     <button
                                         onClick={completeDiagnosis}
@@ -409,10 +685,10 @@ const ChatInterface = () => {
                                         ) : (
                                             <CheckCircle className="w-4 h-4 mr-2 inline" />
                                         )}
-                                        Complete Diagnosis
+                                        Get Health Assessment
                                     </button>
                                     <p className="text-xs text-gray-500 mt-1">
-                                        Click to get your comprehensive health assessment
+                                        Get a comprehensive summary of our consultation
                                     </p>
                                 </div>
                             )}
@@ -444,9 +720,9 @@ const ChatInterface = () => {
                             </div>
                         </div>
                     </div>
-                </>
+                </div>
             )}
-        </div>
+        </>
     );
 };
 

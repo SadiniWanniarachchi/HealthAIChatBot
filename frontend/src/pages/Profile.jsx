@@ -134,21 +134,43 @@ const Profile = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
+            {/* Clean Header */}
             <div className="bg-white shadow-sm border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center">
-                            <button
+                            <motion.button
                                 onClick={() => navigate('/dashboard')}
-                                className="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                className="mr-4 p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                             >
                                 <ArrowLeft className="h-5 w-5" />
-                            </button>
-                            <HeartPulse className="h-8 w-8 text-blue-600" />
-                            <div className="ml-3">
-                                <h1 className="text-lg font-semibold text-gray-900">Profile Settings</h1>
-                                <p className="text-sm text-gray-500">Manage your account information</p>
+                            </motion.button>
+                            <div className="flex items-center">
+                                <HeartPulse className="h-8 w-8 text-blue-600 mr-3" />
+                                <div>
+                                    <h1 className="text-xl font-semibold text-gray-900">Profile Settings</h1>
+                                    <p className="text-sm text-gray-500">Manage your account information</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
+                                <p className="text-sm text-gray-500">@{user?.username}</p>
+                            </div>
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                {user?.avatar ? (
+                                    <img
+                                        src={user.avatar}
+                                        alt="Avatar"
+                                        className="w-10 h-10 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <User className="w-5 h-5 text-blue-600" />
+                                )}
                             </div>
                         </div>
                     </div>
@@ -156,17 +178,18 @@ const Profile = () => {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="space-y-8">
-                    {/* Profile Information */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="space-y-6">
+                    {/* Profile Information Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-lg shadow-md"
+                        transition={{ duration: 0.5 }}
+                        className="bg-white rounded-lg shadow border border-gray-200"
                     >
-                        <div className="p-6 border-b border-gray-200">
+                        <div className="px-6 py-4 border-b border-gray-200">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-gray-900">Profile Information</h2>
+                                <h2 className="text-lg font-semibold text-gray-900">Profile Information</h2>
                                 {!isEditing && (
                                     <button
                                         onClick={() => setIsEditing(true)}
@@ -183,7 +206,7 @@ const Profile = () => {
                                 <form onSubmit={saveProfile} className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                                                 First Name
                                             </label>
                                             <input
@@ -192,13 +215,13 @@ const Profile = () => {
                                                 name="firstName"
                                                 value={profileData.firstName}
                                                 onChange={handleProfileChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 required
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                                                 Last Name
                                             </label>
                                             <input
@@ -207,14 +230,14 @@ const Profile = () => {
                                                 name="lastName"
                                                 value={profileData.lastName}
                                                 onChange={handleProfileChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 required
                                             />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-2">
                                             Avatar URL (Optional)
                                         </label>
                                         <input
@@ -224,7 +247,7 @@ const Profile = () => {
                                             value={profileData.avatar}
                                             onChange={handleProfileChange}
                                             placeholder="https://example.com/avatar.jpg"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
 
@@ -254,8 +277,9 @@ const Profile = () => {
                                 </form>
                             ) : (
                                 <div className="space-y-6">
-                                    <div className="flex items-center">
-                                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                    {/* User Info Display */}
+                                    <div className="flex items-center pb-4 border-b border-gray-200">
+                                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                                             {user?.avatar ? (
                                                 <img
                                                     src={user.avatar}
@@ -266,7 +290,7 @@ const Profile = () => {
                                                 <User className="w-8 h-8 text-blue-600" />
                                             )}
                                         </div>
-                                        <div className="ml-4">
+                                        <div>
                                             <h3 className="text-lg font-medium text-gray-900">
                                                 {user?.firstName} {user?.lastName}
                                             </h3>
@@ -274,6 +298,7 @@ const Profile = () => {
                                         </div>
                                     </div>
 
+                                    {/* Account Details */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -302,7 +327,7 @@ const Profile = () => {
                                                 Last Login
                                             </label>
                                             <div className="flex items-center p-3 bg-gray-50 rounded-md">
-                                                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                                                <CheckCircle className="h-5 w-5 text-blue-500 mr-3" />
                                                 <span className="text-gray-900">{formatDate(user.lastLogin)}</span>
                                             </div>
                                         </div>
@@ -316,12 +341,12 @@ const Profile = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="bg-white rounded-lg shadow-md"
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="bg-white rounded-lg shadow border border-gray-200"
                     >
-                        <div className="p-6 border-b border-gray-200">
+                        <div className="px-6 py-4 border-b border-gray-200">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-gray-900">Security Settings</h2>
+                                <h2 className="text-lg font-semibold text-gray-900">Security Settings</h2>
                                 {!isChangingPassword && (
                                     <button
                                         onClick={() => setIsChangingPassword(true)}
@@ -337,7 +362,7 @@ const Profile = () => {
                             {isChangingPassword ? (
                                 <form onSubmit={changePassword} className="space-y-4">
                                     <div>
-                                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
                                             Current Password
                                         </label>
                                         <div className="relative">
@@ -347,7 +372,7 @@ const Profile = () => {
                                                 name="currentPassword"
                                                 value={passwordData.currentPassword}
                                                 onChange={handlePasswordChange}
-                                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 required
                                             />
                                             <button
@@ -365,7 +390,7 @@ const Profile = () => {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
                                             New Password
                                         </label>
                                         <div className="relative">
@@ -375,7 +400,7 @@ const Profile = () => {
                                                 name="newPassword"
                                                 value={passwordData.newPassword}
                                                 onChange={handlePasswordChange}
-                                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 required
                                             />
                                             <button
@@ -393,7 +418,7 @@ const Profile = () => {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                                             Confirm New Password
                                         </label>
                                         <div className="relative">
@@ -403,7 +428,7 @@ const Profile = () => {
                                                 name="confirmPassword"
                                                 value={passwordData.confirmPassword}
                                                 onChange={handlePasswordChange}
-                                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 required
                                             />
                                             <button
@@ -420,7 +445,7 @@ const Profile = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex space-x-3">
+                                    <div className="flex space-x-3 pt-4">
                                         <button
                                             type="submit"
                                             disabled={isLoading}
@@ -447,7 +472,7 @@ const Profile = () => {
                             ) : (
                                 <div className="space-y-4">
                                     <div>
-                                        <h3 className="font-medium text-gray-900 mb-2">Password</h3>
+                                        <h3 className="font-medium text-gray-900 mb-2">Password Security</h3>
                                         <p className="text-sm text-gray-600">
                                             Your password was last changed on {formatDate(user?.createdAt)}
                                         </p>
@@ -471,11 +496,11 @@ const Profile = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-white rounded-lg shadow-md"
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="bg-white rounded-lg shadow border border-gray-200"
                     >
-                        <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900">Account Status</h2>
+                        <div className="px-6 py-4 border-b border-gray-200">
+                            <h2 className="text-lg font-semibold text-gray-900">Account Status</h2>
                         </div>
 
                         <div className="p-6">
@@ -484,7 +509,7 @@ const Profile = () => {
                                     <h3 className="font-medium text-gray-900">Account Status</h3>
                                     <p className="text-sm text-gray-600">Your account is active and in good standing</p>
                                 </div>
-                                <div className="flex items-center text-green-600">
+                                <div className="flex items-center text-blue-600">
                                     <CheckCircle className="h-5 w-5 mr-2" />
                                     <span className="text-sm font-medium">Active</span>
                                 </div>
