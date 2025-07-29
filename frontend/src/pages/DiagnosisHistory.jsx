@@ -55,22 +55,19 @@ const DiagnosisHistory = () => {
             // Get local completed sessions from localStorage
             const localSessions = JSON.parse(localStorage.getItem('completedSessions') || '[]');
 
-            // Convert local sessions to diagnosis format
-            const localDiagnoses = localSessions.map(session => ({
-                sessionId: session.sessionId,
-                status: 'completed',
-                createdAt: session.createdAt,
-                completedAt: session.completedAt,
-                userInfo: session.userInfo,
-                diagnosis: session.diagnosis,
-                symptoms: session.symptoms || [],
-                urgencyLevel: session.diagnosis?.urgencyLevel || 'low',
-                primaryCondition: session.diagnosis?.primaryCondition?.name || 'Health Consultation',
-                recommendations: session.diagnosis?.recommendations || [],
-                isLocal: true // Mark as local session
-            }));
-
-            // Combine backend and local diagnoses, avoiding duplicates
+        // Convert local sessions to diagnosis format
+        const localDiagnoses = localSessions.map(session => ({
+            sessionId: session.sessionId,
+            createdAt: session.createdAt,
+            completedAt: session.completedAt,
+            userInfo: session.userInfo,
+            diagnosis: session.diagnosis,
+            symptoms: session.symptoms || [],
+            urgencyLevel: session.diagnosis?.urgencyLevel || 'low',
+            primaryCondition: session.diagnosis?.primaryCondition?.name || 'Health Consultation',
+            recommendations: session.diagnosis?.recommendations || [],
+            isLocal: true // Mark as local session
+        }));            // Combine backend and local diagnoses, avoiding duplicates
             const backendSessionIds = backendDiagnoses.map(d => d.sessionId);
             const uniqueLocalDiagnoses = localDiagnoses.filter(ld => !backendSessionIds.includes(ld.sessionId));
 
@@ -86,19 +83,6 @@ const DiagnosisHistory = () => {
             console.error('Error fetching diagnosis history:', error);
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'active':
-                return 'bg-blue-100 text-blue-800';
-            case 'abandoned':
-                return 'bg-gray-100 text-gray-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
         }
     };
 
@@ -142,19 +126,8 @@ const DiagnosisHistory = () => {
     };
 
     const viewDiagnosis = (diagnosis) => {
-        if (diagnosis.status === 'active') {
-            // For active sessions, try to continue the chat
-            if (diagnosis.isLocal) {
-                // Local active sessions should redirect to new chat
-                navigate('/chat');
-            } else {
-                // Backend active sessions can be continued
-                navigate(`/chat/${diagnosis.sessionId}`);
-            }
-        } else {
-            // For completed sessions, show the diagnosis details
-            setSelectedDiagnosis(diagnosis);
-        }
+        // Always show the diagnosis details
+        setSelectedDiagnosis(diagnosis);
     };
 
     const handleDeleteClick = (e, diagnosis) => {
@@ -255,14 +228,14 @@ const DiagnosisHistory = () => {
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex items-center">
                             <div className="p-3 bg-blue-100 rounded-full">
                                 <FileText className="h-6 w-6 text-blue-600" />
                             </div>
                             <div className="ml-4">
-                                <h3 className="text-2xl font-bold text-gray-900">{pagination?.total || 0}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">{diagnoses.length}</h3>
                                 <p className="text-gray-600">Total Consultations</p>
                             </div>
                         </div>
@@ -275,23 +248,9 @@ const DiagnosisHistory = () => {
                             </div>
                             <div className="ml-4">
                                 <h3 className="text-2xl font-bold text-gray-900">
-                                    {diagnoses.filter(d => d.status === 'completed').length}
+                                    {diagnoses.filter(d => d.isLocal).length}
                                 </h3>
-                                <p className="text-gray-600">Completed</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <div className="flex items-center">
-                            <div className="p-3 bg-blue-100 rounded-full">
-                                <Clock className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div className="ml-4">
-                                <h3 className="text-2xl font-bold text-gray-900">
-                                    {diagnoses.filter(d => d.status === 'active').length}
-                                </h3>
-                                <p className="text-gray-600">In Progress</p>
+                                <p className="text-gray-600">Local Sessions</p>
                             </div>
                         </div>
                     </div>
@@ -357,9 +316,6 @@ const DiagnosisHistory = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1">
                                                 <div className="flex items-center space-x-3 mb-2">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(diagnosis.status)}`}>
-                                                        {diagnosis.status}
-                                                    </span>
                                                     {diagnosis.isLocal && (
                                                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                                             <FileText className="h-3 w-3 mr-1" />
@@ -408,7 +364,7 @@ const DiagnosisHistory = () => {
                                                         viewDiagnosis(diagnosis);
                                                     }}
                                                 >
-                                                    {diagnosis.status === 'active' ? 'Continue' : 'View Details'}
+                                                    View Details
                                                 </button>
 
                                                 {/* Modern dropdown menu */}
@@ -434,16 +390,10 @@ const DiagnosisHistory = () => {
                                                                 <button
                                                                     onClick={(e) => handleDeleteClick(e, diagnosis)}
                                                                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center"
-                                                                    disabled={diagnosis.status === 'active'}
                                                                 >
                                                                     <Trash2 className="h-4 w-4 mr-2" />
                                                                     Delete Consultation
                                                                 </button>
-                                                                {diagnosis.status === 'active' && (
-                                                                    <div className="px-4 py-1 text-xs text-gray-500">
-                                                                        Cannot delete active consultations
-                                                                    </div>
-                                                                )}
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>
@@ -512,7 +462,9 @@ const DiagnosisHistory = () => {
                                     <div className="bg-gray-50 p-4 rounded-lg">
                                         <p className="text-sm"><strong>Date:</strong> {formatDate(selectedDiagnosis.createdAt)}</p>
                                         <p className="text-sm"><strong>Session ID:</strong> {selectedDiagnosis.sessionId}</p>
-                                        <p className="text-sm"><strong>Status:</strong> <span className={`px-2 py-1 rounded text-xs ${getStatusColor(selectedDiagnosis.status)}`}>{selectedDiagnosis.status}</span></p>
+                                        {selectedDiagnosis.isLocal && (
+                                            <p className="text-sm"><strong>Type:</strong> <span className="px-2 py-1 rounded text-xs bg-purple-100 text-purple-800">Local Session</span></p>
+                                        )}
                                     </div>
                                 </div>
 

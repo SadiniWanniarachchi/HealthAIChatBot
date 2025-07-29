@@ -207,7 +207,6 @@ const ChatInterface = () => {
             if (currentSession && currentSession.sessionId.startsWith('local_')) {
                 const completedSession = {
                     sessionId: currentSession.sessionId,
-                    status: 'completed',
                     createdAt: new Date().toISOString(),
                     completedAt: new Date().toISOString(),
                     userInfo: userInfo,
