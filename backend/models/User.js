@@ -59,6 +59,51 @@ const userSchema = new mongoose.Schema({
     passwordResetExpires: {
         type: Date,
         default: undefined
+    },
+    healthProfile: {
+        weight: {
+            type: Number,
+            min: [1, 'Weight must be greater than 0'],
+            max: [1000, 'Weight seems unrealistic']
+        },
+        height: {
+            type: Number,
+            min: [1, 'Height must be greater than 0'],
+            max: [300, 'Height seems unrealistic']
+        },
+        bloodGroup: {
+            type: String,
+            enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+            trim: true
+        },
+        dateOfBirth: {
+            type: Date
+        },
+        allergies: {
+            type: String,
+            trim: true,
+            maxlength: [500, 'Allergies description too long']
+        },
+        chronicConditions: {
+            type: String,
+            trim: true,
+            maxlength: [500, 'Chronic conditions description too long']
+        },
+        medications: {
+            type: String,
+            trim: true,
+            maxlength: [1000, 'Medications list too long']
+        },
+        emergencyContact: {
+            type: String,
+            trim: true,
+            maxlength: [100, 'Emergency contact name too long']
+        },
+        emergencyPhone: {
+            type: String,
+            trim: true,
+            maxlength: [20, 'Emergency phone number too long']
+        }
     }
 }, {
     timestamps: true

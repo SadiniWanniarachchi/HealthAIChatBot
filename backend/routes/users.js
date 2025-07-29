@@ -156,6 +156,69 @@ router.put('/profile', auth, async (req, res) => {
     }
 });
 
+// @route   PUT /api/users/health-profile
+// @desc    Update user health profile
+// @access  Private
+router.put('/health-profile', auth, async (req, res) => {
+    try {
+        const {
+            weight,
+            height,
+            bloodGroup,
+            allergies,
+            chronicConditions,
+            medications,
+            emergencyContact,
+            emergencyPhone,
+            dateOfBirth
+        } = req.body;
+
+        // Build health profile object
+        const healthProfile = {};
+        if (weight !== undefined) healthProfile.weight = parseFloat(weight) || undefined;
+        if (height !== undefined) healthProfile.height = parseFloat(height) || undefined;
+        if (bloodGroup !== undefined) healthProfile.bloodGroup = bloodGroup.trim();
+        if (allergies !== undefined) healthProfile.allergies = allergies.trim();
+        if (chronicConditions !== undefined) healthProfile.chronicConditions = chronicConditions.trim();
+        if (medications !== undefined) healthProfile.medications = medications.trim();
+        if (emergencyContact !== undefined) healthProfile.emergencyContact = emergencyContact.trim();
+        if (emergencyPhone !== undefined) healthProfile.emergencyPhone = emergencyPhone.trim();
+        if (dateOfBirth !== undefined) healthProfile.dateOfBirth = dateOfBirth;
+
+        // Remove empty string values
+        Object.keys(healthProfile).forEach(key => {
+            if (healthProfile[key] === '' || healthProfile[key] === undefined) {
+                delete healthProfile[key];
+            }
+        });
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { healthProfile },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        res.json({
+            message: 'Health profile updated successfully',
+            user: user.getPublicProfile()
+        });
+    } catch (error) {
+        console.error('Update health profile error:', error);
+
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({
+                message: 'Validation error',
+                errors: messages
+            });
+        }
+
+        res.status(500).json({
+            message: 'Server error updating health profile'
+        });
+    }
+});
+
 // @route   PUT /api/users/change-password
 // @desc    Change user password
 // @access  Private

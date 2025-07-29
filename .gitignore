@@ -15,9 +15,6 @@ backend/.env
 frontend/.env
 */.env
 **/.env
-# Allow .env.example files
-!**/.env.example
-!.env.example
 
 # API Keys and Secrets (Multiple patterns for safety)
 **/config/keys.js

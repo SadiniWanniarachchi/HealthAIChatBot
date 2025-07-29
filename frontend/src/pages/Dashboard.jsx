@@ -23,7 +23,8 @@ import {
     Home,
     Heart,
     Zap,
-    Brain
+    Brain,
+    Shield
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -50,6 +51,41 @@ const Dashboard = () => {
         heartRate: { value: 80, unit: 'beats/min', status: 'normal', change: '+5 million' },
         bloodPressure: { value: '4.75', unit: 'liters', status: 'normal', change: '+2.3%' },
         temperature: { value: 5, unit: 'million/ml', status: 'normal', change: '+1.2%' }
+    };
+
+    // Health Profile Functions
+    const calculateBMI = () => {
+        const weight = user?.healthProfile?.weight;
+        const height = user?.healthProfile?.height;
+        if (weight && height) {
+            const heightInMeters = height / 100;
+            const bmi = weight / (heightInMeters * heightInMeters);
+            return bmi.toFixed(1);
+        }
+        return null;
+    };
+
+    const getBMICategory = (bmi) => {
+        if (!bmi) return null;
+        const bmiValue = parseFloat(bmi);
+        if (bmiValue < 18.5) return { category: 'Underweight', color: 'text-blue-600', bg: 'bg-blue-100', ring: 'ring-blue-200' };
+        if (bmiValue < 25) return { category: 'Normal', color: 'text-green-600', bg: 'bg-green-100', ring: 'ring-green-200' };
+        if (bmiValue < 30) return { category: 'Overweight', color: 'text-yellow-600', bg: 'bg-yellow-100', ring: 'ring-yellow-200' };
+        return { category: 'Obese', color: 'text-red-600', bg: 'bg-red-100', ring: 'ring-red-200' };
+    };
+
+    const calculateAge = () => {
+        if (user?.healthProfile?.dateOfBirth) {
+            const birthDate = new Date(user.healthProfile.dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+        return null;
     };
 
     useEffect(() => {
@@ -278,6 +314,146 @@ const Dashboard = () => {
                             </motion.div>
                         </div>
                     </motion.div>
+
+                    {/* Health Profile Summary */}
+                    {user?.healthProfile && (user.healthProfile.weight || user.healthProfile.height || user.healthProfile.bloodGroup) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                            className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100"
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center mr-3">
+                                        <Heart className="h-5 w-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900">Health Profile</h3>
+                                        <p className="text-sm text-gray-500">Your personal health information</p>
+                                    </div>
+                                </div>
+                                <Link
+                                    to="/profile"
+                                    className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:bg-blue-50 px-3 py-1 rounded-lg transition-colors"
+                                >
+                                    Update Profile
+                                </Link>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {/* BMI Card */}
+                                {calculateBMI() && (
+                                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-sm font-medium text-gray-700">BMI</h4>
+                                            <Activity className="h-4 w-4 text-blue-500" />
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-2xl font-bold text-blue-600">{calculateBMI()}</span>
+                                            {getBMICategory(calculateBMI()) && (
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getBMICategory(calculateBMI()).bg} ${getBMICategory(calculateBMI()).color} ring-1 ${getBMICategory(calculateBMI()).ring}`}>
+                                                    {getBMICategory(calculateBMI()).category}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Basic Measurements */}
+                                {user.healthProfile.weight && (
+                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-sm font-medium text-gray-700">Weight</h4>
+                                            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-green-600 font-semibold text-xs">kg</span>
+                                            </div>
+                                        </div>
+                                        <span className="text-2xl font-bold text-green-600">{user.healthProfile.weight}</span>
+                                        <p className="text-xs text-gray-500 mt-1">kilograms</p>
+                                    </div>
+                                )}
+
+                                {user.healthProfile.height && (
+                                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-sm font-medium text-gray-700">Height</h4>
+                                            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-purple-600 font-semibold text-xs">cm</span>
+                                            </div>
+                                        </div>
+                                        <span className="text-2xl font-bold text-purple-600">{user.healthProfile.height}</span>
+                                        <p className="text-xs text-gray-500 mt-1">centimeters</p>
+                                    </div>
+                                )}
+
+                                {user.healthProfile.bloodGroup && (
+                                    <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-4 border border-red-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-sm font-medium text-gray-700">Blood Group</h4>
+                                            <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                                <span className="text-red-600 text-sm">🩸</span>
+                                            </div>
+                                        </div>
+                                        <span className="text-2xl font-bold text-red-600">{user.healthProfile.bloodGroup}</span>
+                                        <p className="text-xs text-gray-500 mt-1">blood type</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Age and Additional Info */}
+                            <div className="flex flex-wrap items-center gap-6 mt-4 pt-4 border-t border-gray-100">
+                                {calculateAge() && (
+                                    <div className="flex items-center space-x-2">
+                                        <Calendar className="h-4 w-4 text-gray-400" />
+                                        <span className="text-sm text-gray-600">Age: <span className="font-medium">{calculateAge()} years</span></span>
+                                    </div>
+                                )}
+
+                                {user.healthProfile.emergencyContact && (
+                                    <div className="flex items-center space-x-2">
+                                        <AlertCircle className="h-4 w-4 text-orange-400" />
+                                        <span className="text-sm text-gray-600">Emergency: <span className="font-medium">{user.healthProfile.emergencyContact}</span></span>
+                                    </div>
+                                )}
+
+                                {(user.healthProfile.allergies || user.healthProfile.chronicConditions) && (
+                                    <div className="flex items-center space-x-2">
+                                        <Settings className="h-4 w-4 text-yellow-400" />
+                                        <span className="text-sm text-gray-600">Medical conditions noted</span>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Incomplete Health Profile Prompt */}
+                    {(!user?.healthProfile || (!user.healthProfile.weight && !user.healthProfile.height && !user.healthProfile.bloodGroup)) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                            className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 mb-8 border border-orange-200"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mr-4">
+                                        <Heart className="h-6 w-6 text-orange-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-orange-900 mb-1">Complete Your Health Profile</h3>
+                                        <p className="text-sm text-orange-700">Add your health information to get personalized insights and better consultation experiences.</p>
+                                    </div>
+                                </div>
+                                <Link
+                                    to="/profile"
+                                    className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg hover:shadow-xl"
+                                >
+                                    Add Health Info
+                                </Link>
+                            </div>
+                        </motion.div>
+                    )}
 
                     <div className="grid grid-cols-12 gap-8">
                         {/* Left Side - Consultation Card */}
