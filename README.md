@@ -1,20 +1,7 @@
 # 🏥 AI Health Diagnosis Chatbot
 
-<div align="center">
-
-![Health AI Chatbot](https://img.shields.io/badge/Health-AI%20Chatbot-blue?style=for-the-badge&logo=healthcare&logoColor=white)
-![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-
-**A modern, intelligent healthcare assistant that provides AI-powered medical consultations, health monitoring, and personalized health insights.**
-
-[🚀 Live Demo](#-live-demo) • [📖 Documentation](#-documentation) • [🛠️ Installation](#️-installation) • [🤝 Contributing](#-contributing)
-
-</div>
-
 ---
+
 
 ## 🌟 Features
 
@@ -40,48 +27,38 @@
 
 ---
 
-## 📸 Screenshots
+<br/>
 
 <div align="center">
 
-### 🏠 Landing Page
+
 <img src="frontend/public/landing.png" alt="Landing Page" width="800" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
 
-*Modern, welcoming landing page introducing the AI Health Assistant*
 
----
 
-### 🔐 User Authentication
+<br/>
 
-<table>
-<tr>
-<td width="50%">
 
-#### Login Page
+<br/>
+
+
 <img src="frontend/public/login.jpeg" alt="Login Page" width="100%" style="border-radius: 8px;">
 
-</td>
-<td width="50%">
+<br/><br/>
 
-#### Registration Page  
+
 <img src="frontend/public/registration.jpeg" alt="Registration Page" width="100%" style="border-radius: 8px;">
 
-</td>
-</tr>
-</table>
 
-*Secure and user-friendly authentication system with modern design*
 
----
+<br/>
+<br/>
 
-### 📊 Health Dashboard
 <img src="frontend/public/dashboard.jpeg" alt="Health Dashboard" width="800" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
 
-*Comprehensive health monitoring dashboard with real-time metrics and AI consultation features*
-
 </div>
+<br/>
 
----
 
 ## 🏗️ Architecture
 
@@ -99,7 +76,6 @@ graph TB
 ```
 
 ---
-
 ## 🛠️ Tech Stack
 
 ### **Frontend**
@@ -128,97 +104,7 @@ graph TB
 - **Environment Variables** - Secure configuration management
 
 ---
-
-## 🚀 Quick Start
-
-### Prerequisites
-Ensure you have the following installed:
-- **Node.js** (v16.0.0 or higher)
-- **npm** (v8.0.0 or higher) or **yarn**
-- **MongoDB Atlas** account
-- **Git** for version control
-
-### Installation
-
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/SadiniWanniarachchi/HealthAIChatBot.git
-   cd HealthAIChatBot
-   ```
-
-2. **Backend Setup**
-   ```bash
-   cd backend
-   
-   # Install dependencies
-   npm install
-   
-   # Setup environment variables
-   copy .env.example .env
-   # Edit .env with your actual credentials (see Environment Variables section)
-   
-   # Start the development server
-   npm run dev
-   ```
-
-3. **Frontend Setup**
-   ```bash
-   # Open a new terminal and navigate to frontend
-   cd frontend
-   
-   # Install dependencies
-   npm install
-   
-   # Start the development server
-   npm run dev
-   ```
-
-4. **Access the Application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:5000
-
----
-
-## 🔧 Environment Configuration
-
-### Backend Environment Variables (`backend/.env`)
-
-```env
-# Server Configuration
-NODE_ENV=development
-PORT=5000
-FRONTEND_URL=http://localhost:5173
-
-# Database Configuration
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
-
-# JWT Authentication
-JWT_SECRET=your_super_secure_jwt_secret_minimum_32_characters
-JWT_EXPIRES_IN=7d
-
-# Email Configuration (Optional)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
-
-# AI Service Configuration (if applicable)
-AI_API_KEY=your_ai_service_api_key
-AI_BASE_URL=https://api.your-ai-service.com
-```
-
-### Security Best Practices
-
-⚠️ **Important Security Notes:**
-
-- **Never commit `.env` files** - they contain sensitive credentials
-- Use strong, unique passwords for all services
-- Generate secure JWT secrets: [JWT Secret Generator](https://generate-secret.vercel.app/32)
-- Enable MongoDB Atlas IP whitelisting
-- Use 2FA on all cloud service accounts
-- Regularly rotate API keys and passwords
-
----
+<br/>
 
 ## 📁 Project Structure
 
@@ -254,7 +140,7 @@ HealthAIChatBot/
 
 ---
 
-## 🎯 Key Features Breakdown
+<br/>
 
 ### 1. **Authentication System**
 - User registration and login
@@ -283,20 +169,8 @@ HealthAIChatBot/
 - Profile picture upload (if implemented)
 
 ---
+<br/>
 
-## � Live Demo
-
-🌐 **[View Live Application](https://your-deployed-app-url.com)**
-
-### Demo Credentials
-```
-Email: demo@healthai.com
-Password: demo123
-```
-
-*Note: Demo data is reset every 24 hours*
-
----
 
 ## 📚 API Documentation
 
@@ -324,108 +198,8 @@ DELETE /api/chat/history   # Clear chat history
 ```
 
 ---
+<br/>
 
-## 🧪 Testing
-
-### Running Tests
-```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
-```
-
-### Test Coverage
-- Unit tests for utility functions
-- Integration tests for API endpoints
-- Component tests for React components
-- End-to-end tests for user workflows
-
----
-
-## 🚀 Deployment
-
-### Frontend (Vercel/Netlify)
-```bash
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-### Backend (Railway/Heroku)
-```bash
-# Build command
-npm install
-
-# Start command
-npm start
-```
-
-### Environment Variables for Production
-Remember to set all environment variables in your hosting platform:
-- `NODE_ENV=production`
-- `MONGODB_URI`
-- `JWT_SECRET`
-- `FRONTEND_URL`
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Process
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Code Style
-- Use ESLint for JavaScript linting
-- Follow React best practices
-- Write meaningful commit messages
-- Add tests for new features
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**Sadini Wanniarachchi**
-- GitHub: [@SadiniWanniarachchi](https://github.com/SadiniWanniarachchi)
-- LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/your-profile)
-- Email: [your.email@domain.com](mailto:your.email@domain.com)
-
----
-
-## 🙏 Acknowledgments
-
-- Thanks to all contributors who have helped with this project
-- Inspiration from modern healthcare applications
-- Open source community for amazing tools and libraries
-- Healthcare professionals for domain expertise
-
----
-
-## � Project Stats
-
-![GitHub stars](https://img.shields.io/github/stars/SadiniWanniarachchi/HealthAIChatBot?style=social)
-![GitHub forks](https://img.shields.io/github/forks/SadiniWanniarachchi/HealthAIChatBot?style=social)
-![GitHub issues](https://img.shields.io/github/issues/SadiniWanniarachchi/HealthAIChatBot)
-![GitHub last commit](https://img.shields.io/github/last-commit/SadiniWanniarachchi/HealthAIChatBot)
-
----
 
 <div align="center">
 
