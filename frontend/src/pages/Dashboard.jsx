@@ -20,6 +20,120 @@ import {
 import { diagnosisAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
+// Modern Circular Progress Component with Enhanced Design
+const CircularProgress = ({ percentage, size = 120, strokeWidth = 12, color = 'blue', children, label, showPercentage = true }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+    const colorClasses = {
+        blue: {
+            stroke: 'stroke-blue-500',
+            glow: '',
+            gradient: 'from-blue-400 to-blue-600',
+            bg: 'bg-blue-50'
+        },
+        green: {
+            stroke: 'stroke-green-500',
+            glow: '',
+            gradient: 'from-green-400 to-green-600',
+            bg: 'bg-green-50'
+        },
+        red: {
+            stroke: 'stroke-red-500',
+            glow: '',
+            gradient: 'from-red-400 to-red-600',
+            bg: 'bg-red-50'
+        },
+        yellow: {
+            stroke: 'stroke-yellow-500',
+            glow: '',
+            gradient: 'from-yellow-400 to-yellow-600',
+            bg: 'bg-yellow-50'
+        },
+        purple: {
+            stroke: 'stroke-purple-500',
+            glow: '',
+            gradient: 'from-purple-400 to-purple-600',
+            bg: 'bg-purple-50'
+        },
+        orange: {
+            stroke: 'stroke-orange-500',
+            glow: '',
+            gradient: 'from-orange-400 to-orange-600',
+            bg: 'bg-orange-50'
+        },
+        gray: {
+            stroke: 'stroke-gray-400',
+            glow: '',
+            gradient: 'from-gray-300 to-gray-500',
+            bg: 'bg-gray-50'
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-center">
+            <div className="relative" style={{ width: size, height: size }}>
+                {/* Gradient definitions */}
+                <svg width="0" height="0">
+                    <defs>
+                        <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" className={`stop-${color}-400`} />
+                            <stop offset="100%" className={`stop-${color}-600`} />
+                        </linearGradient>
+                    </defs>
+                </svg>
+
+                <svg
+                    width={size}
+                    height={size}
+                    className="transform -rotate-90"
+                >
+                    {/* Background circle */}
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke="currentColor"
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                        className="text-gray-200"
+                    />
+                    {/* Progress circle */}
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke="currentColor"
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                        strokeDasharray={strokeDasharray}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        className={`${colorClasses[color].stroke} transition-all duration-1500 ease-out`}
+                    />
+                </svg>
+
+                {/* Center content with enhanced styling */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                        {children}
+                        {showPercentage && (
+                            <div className={`text-xs font-semibold mt-1 ${colorClasses[color].stroke.replace('stroke-', 'text-')}`}>
+                                {Math.round(percentage)}%
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+            {label && (
+                <span className="text-sm font-medium text-gray-700 mt-3 text-center">{label}</span>
+            )}
+        </div>
+    );
+};
+
 const Dashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -51,6 +165,47 @@ const Dashboard = () => {
         if (bmiValue < 25) return { category: 'Normal', color: 'text-green-600', bg: 'bg-green-100', ring: 'ring-green-200' };
         if (bmiValue < 30) return { category: 'Overweight', color: 'text-yellow-600', bg: 'bg-yellow-100', ring: 'ring-yellow-200' };
         return { category: 'Obese', color: 'text-red-600', bg: 'bg-red-100', ring: 'ring-red-200' };
+    };
+
+    // Health score calculation functions
+    const getBMIProgress = () => {
+        const bmi = calculateBMI();
+        if (!bmi) return { percentage: 0, color: 'gray', status: 'No Data' };
+
+        const bmiValue = parseFloat(bmi);
+        if (bmiValue < 18.5) return { percentage: 60, color: 'blue', status: 'Underweight' };
+        if (bmiValue < 25) return { percentage: 100, color: 'green', status: 'Normal' };
+        if (bmiValue < 30) return { percentage: 70, color: 'yellow', status: 'Overweight' };
+        return { percentage: 40, color: 'red', status: 'Obese' };
+    };
+
+    const getBloodPressureProgress = () => {
+        const systolic = user?.healthProfile?.bloodPressureSystolic;
+        const diastolic = user?.healthProfile?.bloodPressureDiastolic;
+
+        if (!systolic || !diastolic) return { percentage: 0, color: 'gray', status: 'No Data' };
+
+        if (systolic <= 120 && diastolic <= 80) return { percentage: 100, color: 'green', status: 'Normal' };
+        if (systolic <= 140 && diastolic <= 90) return { percentage: 70, color: 'yellow', status: 'Elevated' };
+        return { percentage: 40, color: 'red', status: 'High' };
+    };
+
+    const getCholesterolProgress = () => {
+        const cholesterol = user?.healthProfile?.cholesterolLevel;
+        if (!cholesterol) return { percentage: 0, color: 'gray', status: 'No Data' };
+
+        if (cholesterol < 200) return { percentage: 100, color: 'green', status: 'Desirable' };
+        if (cholesterol < 240) return { percentage: 60, color: 'yellow', status: 'Borderline' };
+        return { percentage: 30, color: 'red', status: 'High' };
+    };
+
+    const getDiabetesProgress = () => {
+        const diabetes = user?.healthProfile?.diabetesStatus;
+        if (!diabetes) return { percentage: 0, color: 'gray', status: 'No Data' };
+
+        if (diabetes === 'No Diabetes') return { percentage: 100, color: 'green', status: 'Healthy' };
+        if (diabetes === 'Pre-diabetic') return { percentage: 60, color: 'orange', status: 'Pre-diabetic' };
+        return { percentage: 30, color: 'red', status: 'Diabetic' };
     };
 
     const calculateAge = () => {
@@ -324,7 +479,7 @@ const Dashboard = () => {
 
                     <div className="grid grid-cols-12 gap-8">
                         {/* Left Side - Main Content */}
-                        <div className="col-span-12 lg:col-span-8 space-y-8">
+                        <div className="col-span-12 lg:col-span-6 space-y-8">
 
                             {/* Start Consultation Card - Full Width */}
                             <motion.div
@@ -444,13 +599,13 @@ const Dashboard = () => {
                         </div>
 
                         {/* Right Sidebar - Health Profile */}
-                        <div className="col-span-12 lg:col-span-4 space-y-6">
+                        <div className="col-span-12 lg:col-span-6 space-y-6">
                             {/* Health Profile Header */}
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.6, delay: 0.2 }}
-                                className="bg-white rounded-2xl p-6 shadow-xl border border-gray-200/50"
+                                className="bg-white rounded-2xl p-6 border border-gray-200/50"
                             >
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center">
@@ -472,185 +627,157 @@ const Dashboard = () => {
 
                                 {/* Show health profile data or prompt to complete */}
                                 {user?.healthProfile && (user.healthProfile.weight || user.healthProfile.height || user.healthProfile.bloodGroup || user.healthProfile.bloodPressureSystolic || user.healthProfile.diabetesStatus || user.healthProfile.cholesterolLevel) ? (
-                                    <div className="space-y-4">
-                                        {/* BMI Section */}
-                                        {calculateBMI() && (
-                                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <h4 className="text-sm font-medium text-gray-700">BMI Index</h4>
-                                                    <Activity className="h-4 w-4 text-blue-500" />
-                                                </div>
-                                                <div className="flex items-center space-x-3 mb-2">
-                                                    <span className="text-2xl font-bold text-blue-600">{calculateBMI()}</span>
-                                                    {getBMICategory(calculateBMI()) && (
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getBMICategory(calculateBMI()).bg} ${getBMICategory(calculateBMI()).color} ring-1 ${getBMICategory(calculateBMI()).ring}`}>
-                                                            {getBMICategory(calculateBMI()).category}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs text-gray-500">Body Mass Index</p>
-                                            </div>
-                                        )}
-
-                                        {/* Basic Measurements */}
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {user.healthProfile.weight && (
-                                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border border-green-100">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <h4 className="text-xs font-medium text-gray-700">Weight</h4>
-                                                        <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
-                                                            <span className="text-green-600 font-semibold text-xs">kg</span>
-                                                        </div>
+                                    <div className="space-y-8">
+                                        {/* Health Metrics with Clean Circular Charts - 2 per row */}
+                                        <div className="grid grid-cols-2 gap-6">
+                                            {/* BMI Chart */}
+                                            {calculateBMI() && (
+                                                <motion.div
+                                                    className="bg-white rounded-2xl p-6 border border-gray-200"
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.6, delay: 0.1 }}
+                                                    whileHover={{ scale: 1.02, y: -2 }}
+                                                >
+                                                    <div className="flex items-center justify-center">
+                                                        <CircularProgress
+                                                            percentage={getBMIProgress().percentage}
+                                                            size={120}
+                                                            strokeWidth={10}
+                                                            color={getBMIProgress().color}
+                                                            label="BMI Index"
+                                                            showPercentage={false}
+                                                        >
+                                                            <div className="text-center">
+                                                                <div className="text-2xl font-bold text-gray-800 mb-1">{calculateBMI()}</div>
+                                                                <div className="text-xs font-medium text-gray-500">{getBMIProgress().status}</div>
+                                                            </div>
+                                                        </CircularProgress>
                                                     </div>
-                                                    <span className="text-lg font-bold text-green-600">{user.healthProfile.weight}</span>
-                                                    <p className="text-xs text-gray-500">kilograms</p>
-                                                </div>
+                                                </motion.div>
                                             )}
 
-                                            {user.healthProfile.height && (
-                                                <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-3 border border-purple-100">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <h4 className="text-xs font-medium text-gray-700">Height</h4>
-                                                        <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
-                                                            <span className="text-purple-600 font-semibold text-xs">cm</span>
-                                                        </div>
+                                            {/* Blood Pressure Chart */}
+                                            {user.healthProfile.bloodPressureSystolic && (
+                                                <motion.div
+                                                    className="bg-white rounded-2xl p-6 border border-gray-200"
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.6, delay: 0.2 }}
+                                                    whileHover={{ scale: 1.02, y: -2 }}
+                                                >
+                                                    <div className="flex items-center justify-center">
+                                                        <CircularProgress
+                                                            percentage={getBloodPressureProgress().percentage}
+                                                            size={120}
+                                                            strokeWidth={10}
+                                                            color={getBloodPressureProgress().color}
+                                                            label="Blood Pressure"
+                                                            showPercentage={false}
+                                                        >
+                                                            <div className="text-center">
+                                                                <div className="text-lg font-bold text-gray-800 mb-1">
+                                                                    {user.healthProfile.bloodPressureSystolic}/{user.healthProfile.bloodPressureDiastolic || '---'}
+                                                                </div>
+                                                                <div className="text-xs font-medium text-gray-500">{getBloodPressureProgress().status}</div>
+                                                            </div>
+                                                        </CircularProgress>
                                                     </div>
-                                                    <span className="text-lg font-bold text-purple-600">{user.healthProfile.height}</span>
-                                                    <p className="text-xs text-gray-500">centimeters</p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Vital Health Metrics */}
-                                        <div className="space-y-3">
-                                            {/* Blood Pressure */}
-                                            {(user.healthProfile.bloodPressureSystolic || user.healthProfile.bloodPressureDiastolic) && (
-                                                <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-4 border border-red-100">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h4 className="text-sm font-medium text-gray-700">Blood Pressure</h4>
-                                                        <Heart className="h-4 w-4 text-red-500" />
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-xl font-bold text-red-600">
-                                                            {user.healthProfile.bloodPressureSystolic || '---'}/{user.healthProfile.bloodPressureDiastolic || '---'}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">mmHg</span>
-                                                    </div>
-                                                    <div className="mt-2">
-                                                        {user.healthProfile.bloodPressureSystolic && user.healthProfile.bloodPressureDiastolic && (
-                                                            <span className={`text-xs px-2 py-1 rounded-full ${user.healthProfile.bloodPressureSystolic <= 120 && user.healthProfile.bloodPressureDiastolic <= 80
-                                                                ? 'text-green-600 bg-green-50'
-                                                                : user.healthProfile.bloodPressureSystolic <= 140 && user.healthProfile.bloodPressureDiastolic <= 90
-                                                                    ? 'text-yellow-600 bg-yellow-50'
-                                                                    : 'text-red-600 bg-red-50'
-                                                                }`}>
-                                                                {user.healthProfile.bloodPressureSystolic <= 120 && user.healthProfile.bloodPressureDiastolic <= 80
-                                                                    ? 'Normal'
-                                                                    : user.healthProfile.bloodPressureSystolic <= 140 && user.healthProfile.bloodPressureDiastolic <= 90
-                                                                        ? 'Elevated'
-                                                                        : 'High'}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                </motion.div>
                                             )}
 
-                                            {/* Cholesterol */}
+                                            {/* Cholesterol Chart */}
                                             {user.healthProfile.cholesterolLevel && (
-                                                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-4 border border-yellow-100">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h4 className="text-sm font-medium text-gray-700">Cholesterol</h4>
-                                                        <Activity className="h-4 w-4 text-yellow-500" />
+                                                <motion.div
+                                                    className="bg-white rounded-2xl p-6 border border-gray-200"
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.6, delay: 0.3 }}
+                                                    whileHover={{ scale: 1.02, y: -2 }}
+                                                >
+                                                    <div className="flex items-center justify-center">
+                                                        <CircularProgress
+                                                            percentage={getCholesterolProgress().percentage}
+                                                            size={120}
+                                                            strokeWidth={10}
+                                                            color={getCholesterolProgress().color}
+                                                            label="Cholesterol"
+                                                            showPercentage={false}
+                                                        >
+                                                            <div className="text-center">
+                                                                <div className="text-xl font-bold text-gray-800 mb-1">{user.healthProfile.cholesterolLevel}</div>
+                                                                <div className="text-xs text-gray-500">mg/dL</div>
+                                                                <div className="text-xs font-medium text-gray-500 mt-1">{getCholesterolProgress().status}</div>
+                                                            </div>
+                                                        </CircularProgress>
                                                     </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-xl font-bold text-yellow-600">{user.healthProfile.cholesterolLevel}</span>
-                                                        <span className="text-xs text-gray-500">mg/dL</span>
-                                                    </div>
-                                                    <div className="mt-2">
-                                                        <span className={`text-xs px-2 py-1 rounded-full ${user.healthProfile.cholesterolLevel < 200
-                                                            ? 'text-green-600 bg-green-50'
-                                                            : user.healthProfile.cholesterolLevel < 240
-                                                                ? 'text-yellow-600 bg-yellow-50'
-                                                                : 'text-red-600 bg-red-50'
-                                                            }`}>
-                                                            {user.healthProfile.cholesterolLevel < 200
-                                                                ? 'Desirable'
-                                                                : user.healthProfile.cholesterolLevel < 240
-                                                                    ? 'Borderline'
-                                                                    : 'High'}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                                </motion.div>
                                             )}
 
-                                            {/* Diabetes Status */}
+                                            {/* Diabetes Status Chart */}
                                             {user.healthProfile.diabetesStatus && (
-                                                <div className={`rounded-xl p-4 border ${user.healthProfile.diabetesStatus === 'No Diabetes'
-                                                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100'
-                                                    : user.healthProfile.diabetesStatus === 'Pre-diabetic'
-                                                        ? 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-100'
-                                                        : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100'
-                                                    }`}>
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h4 className="text-sm font-medium text-gray-700">Diabetes</h4>
-                                                        <Shield className={`h-4 w-4 ${user.healthProfile.diabetesStatus === 'No Diabetes'
-                                                            ? 'text-green-500'
-                                                            : user.healthProfile.diabetesStatus === 'Pre-diabetic'
-                                                                ? 'text-orange-500'
-                                                                : 'text-red-500'
-                                                            }`} />
+                                                <motion.div
+                                                    className="bg-white rounded-2xl p-6 border border-gray-200"
+                                                    initial={{ opacity: 0, scale: 0.9 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    transition={{ duration: 0.6, delay: 0.4 }}
+                                                    whileHover={{ scale: 1.02, y: -2 }}
+                                                >
+                                                    <div className="flex items-center justify-center">
+                                                        <CircularProgress
+                                                            percentage={getDiabetesProgress().percentage}
+                                                            size={120}
+                                                            strokeWidth={10}
+                                                            color={getDiabetesProgress().color}
+                                                            label="Diabetes Status"
+                                                            showPercentage={false}
+                                                        >
+                                                            <div className="text-center">
+                                                                <div className="text-lg font-bold text-gray-800 mb-1">
+                                                                    {user.healthProfile.diabetesStatus === 'No Diabetes' ? 'Healthy' :
+                                                                        user.healthProfile.diabetesStatus === 'Pre-diabetic' ? 'Pre-Diabetic' : 'Diabetic'}
+                                                                </div>
+                                                                <div className="text-xs font-medium text-gray-500">{getDiabetesProgress().status}</div>
+                                                            </div>
+                                                        </CircularProgress>
                                                     </div>
-                                                    <span className={`text-sm font-bold ${user.healthProfile.diabetesStatus === 'No Diabetes'
-                                                        ? 'text-green-600'
-                                                        : user.healthProfile.diabetesStatus === 'Pre-diabetic'
-                                                            ? 'text-orange-600'
-                                                            : 'text-red-600'
-                                                        }`}>
-                                                        {user.healthProfile.diabetesStatus}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {/* Blood Group */}
-                                            {user.healthProfile.bloodGroup && (
-                                                <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-4 border border-red-100">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h4 className="text-sm font-medium text-gray-700">Blood Type</h4>
-                                                        <div className="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center">
-                                                            <span className="text-red-600 text-sm">🩸</span>
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-xl font-bold text-red-600">{user.healthProfile.bloodGroup}</span>
-                                                    <p className="text-xs text-gray-500">blood group</p>
-                                                </div>
+                                                </motion.div>
                                             )}
                                         </div>
 
-                                        {/* Additional Info */}
-                                        {(calculateAge() || user.healthProfile.emergencyContact || user.healthProfile.allergies || user.healthProfile.chronicConditions) && (
-                                            <div className="pt-4 border-t border-gray-100 space-y-2">
+                                        {/* Physical Measurements - Simple List Layout */}
+                                        <div className="bg-white rounded-2xl p-6 border border-gray-200">
+                                            <h4 className="text-xl font-bold text-gray-800 mb-6">Physical Measurements</h4>
+                                            <div className="space-y-4">
+                                                {user.healthProfile.weight && (
+                                                    <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                                                        <span className="text-gray-600 font-medium">Weight</span>
+                                                        <span className="text-gray-900 font-semibold">{user.healthProfile.weight} kg</span>
+                                                    </div>
+                                                )}
+
+                                                {user.healthProfile.height && (
+                                                    <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                                                        <span className="text-gray-600 font-medium">Height</span>
+                                                        <span className="text-gray-900 font-semibold">{user.healthProfile.height} cm</span>
+                                                    </div>
+                                                )}
+
+                                                {user.healthProfile.bloodGroup && (
+                                                    <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                                                        <span className="text-gray-600 font-medium">Blood Type</span>
+                                                        <span className="text-gray-900 font-semibold">{user.healthProfile.bloodGroup}</span>
+                                                    </div>
+                                                )}
+
                                                 {calculateAge() && (
-                                                    <div className="flex items-center space-x-2">
-                                                        <Calendar className="h-4 w-4 text-gray-400" />
-                                                        <span className="text-sm text-gray-600">Age: <span className="font-medium">{calculateAge()} years</span></span>
-                                                    </div>
-                                                )}
-
-                                                {user.healthProfile.emergencyContact && (
-                                                    <div className="flex items-center space-x-2">
-                                                        <AlertCircle className="h-4 w-4 text-orange-400" />
-                                                        <span className="text-sm text-gray-600">Emergency: <span className="font-medium">{user.healthProfile.emergencyContact}</span></span>
-                                                    </div>
-                                                )}
-
-                                                {(user.healthProfile.allergies || user.healthProfile.chronicConditions) && (
-                                                    <div className="flex items-center space-x-2">
-                                                        <Settings className="h-4 w-4 text-yellow-400" />
-                                                        <span className="text-sm text-gray-600">Medical conditions noted</span>
+                                                    <div className="flex justify-between items-center py-3">
+                                                        <span className="text-gray-600 font-medium">Age</span>
+                                                        <span className="text-gray-900 font-semibold">{calculateAge()} years</span>
                                                     </div>
                                                 )}
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="text-center py-8">
