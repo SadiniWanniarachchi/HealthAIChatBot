@@ -40,6 +40,49 @@
 
 ---
 
+## 📸 Screenshots
+
+<div align="center">
+
+### 🏠 Landing Page
+<img src="frontend/public/landing.png" alt="Landing Page" width="800" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+
+*Modern, welcoming landing page introducing the AI Health Assistant*
+
+---
+
+### 🔐 User Authentication
+
+<table>
+<tr>
+<td width="50%">
+
+#### Login Page
+<img src="frontend/public/login.jpeg" alt="Login Page" width="100%" style="border-radius: 8px;">
+
+</td>
+<td width="50%">
+
+#### Registration Page  
+<img src="frontend/public/registration.jpeg" alt="Registration Page" width="100%" style="border-radius: 8px;">
+
+</td>
+</tr>
+</table>
+
+*Secure and user-friendly authentication system with modern design*
+
+---
+
+### 📊 Health Dashboard
+<img src="frontend/public/dashboard.jpeg" alt="Health Dashboard" width="800" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+
+*Comprehensive health monitoring dashboard with real-time metrics and AI consultation features*
+
+</div>
+
+---
+
 ## 🏗️ Architecture
 
 ```mermaid
