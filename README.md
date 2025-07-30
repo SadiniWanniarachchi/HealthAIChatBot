@@ -1,7 +1,5 @@
 # 🏥 AI Health Diagnosis Chatbot
 
----
-
 
 ## 🌟 Features
 
