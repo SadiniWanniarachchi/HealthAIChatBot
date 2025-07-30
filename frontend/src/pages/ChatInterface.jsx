@@ -399,16 +399,16 @@ const ChatInterface = () => {
             result += `### 📊 Primary Assessment\n\n`;
             result += `**Condition:** ${diagnosis.primaryCondition.name}\n\n`;
             result += `**Confidence Level:** ${diagnosis.primaryCondition.confidence}%\n\n`;
-            result += `**Description:**\n${diagnosis.primaryCondition.description}\n\n`;
+            result += `**Description:**\n\n${diagnosis.primaryCondition.description}\n\n`;
             result += `---\n\n`;
         }
 
         if (diagnosis.alternativeConditions && diagnosis.alternativeConditions.length > 0) {
             result += `### 🔍 Alternative Considerations\n\n`;
             diagnosis.alternativeConditions.forEach((condition, index) => {
-                result += `**${index + 1}. ${condition.name}** (${condition.confidence}% confidence)\n`;
+                result += `**${index + 1}. ${condition.name}** (${condition.confidence}% confidence)\n\n`;
                 if (condition.description) {
-                    result += `   ${condition.description}\n\n`;
+                    result += `${condition.description}\n\n`;
                 } else {
                     result += `\n`;
                 }
@@ -417,26 +417,16 @@ const ChatInterface = () => {
         }
 
         if (diagnosis.recommendations && diagnosis.recommendations.length > 0) {
-            result += `### 📋 Medical Recommendations\n\n`;
+            result += `### 📋 Recommendations\n\n`;
             diagnosis.recommendations.forEach((rec, index) => {
-                result += `**${index + 1}.**  ${rec}\n\n`;
+                result += `**${index + 1}.** ${rec}\n\n`;
             });
             result += `---\n\n`;
         }
 
-        result += `### ⚠️ Important Medical Disclaimer\n\n`;
+        result += `### ⚠️ Important Disclaimer\n\n`;
         result += `> This assessment is for **informational purposes only** and should not replace professional medical advice.\n\n`;
-
-        if (diagnosis.urgencyLevel === 'emergency') {
-            result += `### 🚨 URGENT NOTICE\n\n`;
-            result += `**Please seek immediate medical attention.**\n\n`;
-        } else if (diagnosis.urgencyLevel === 'high') {
-            result += `### ⚡ High Priority\n\n`;
-            result += `**Please consult with a healthcare provider soon.**\n\n`;
-        } else {
-            result += `### 💡 Next Steps\n\n`;
-            result += `Please consult with a healthcare provider for proper diagnosis and treatment.\n\n`;
-        }
+        result += `> Please consult with a healthcare provider for proper diagnosis and treatment.\n\n`;
 
         result += `---\n\n`;
         result += `*Assessment completed at ${new Date().toLocaleString()}*`;
@@ -692,7 +682,7 @@ const ChatInterface = () => {
                             <div className="flex items-center justify-between h-14 sm:h-16">
                                 <div className="flex items-center min-w-0 flex-1">
                                     <button
-                                        onClick={() => navigate('/dashboard')}
+                                        onClick={() => navigate('/history')}
                                         className="mr-2 sm:mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0"
                                     >
                                         <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />

@@ -15,7 +15,10 @@ import {
     FileText,
     Trash2,
     X,
-    AlertCircle
+    AlertCircle,
+    MessageCircle,
+    TrendingUp,
+    Activity
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
 import { validateUserOwnership, filterUserData, logSecurityEvent, isUserAuthenticated } from '../utils/userSecurity';
@@ -248,27 +251,28 @@ const DiagnosisHistory = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex items-center">
                             <div className="p-3 bg-green-100 rounded-full">
-                                <CheckCircle className="h-6 w-6 text-green-600" />
+                                <MessageCircle className="h-6 w-6 text-green-600" />
                             </div>
                             <div className="ml-4">
                                 <h3 className="text-2xl font-bold text-gray-900">
-                                    {diagnoses.filter(d => d.status === 'completed').length}
+                                    {diagnoses.reduce((total, d) => total + (d.chatMessages?.length || 0), 0)}
                                 </h3>
-                                <p className="text-gray-600">Completed Sessions</p>
+                                <p className="text-gray-600">Total Messages</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex items-center">
-                            <div className="p-3 bg-red-100 rounded-full">
-                                <AlertTriangle className="h-6 w-6 text-red-600" />
+                            <div className="p-3 bg-purple-100 rounded-full">
+                                <Activity className="h-6 w-6 text-purple-600" />
                             </div>
                             <div className="ml-4">
                                 <h3 className="text-2xl font-bold text-gray-900">
-                                    {diagnoses.filter(d => d.diagnosis?.urgencyLevel === 'high' || d.diagnosis?.urgencyLevel === 'emergency').length}
+                                    {diagnoses.length > 0 ?
+                                        Math.round(diagnoses.reduce((total, d) => total + (d.diagnosis?.primaryCondition?.confidence || 0), 0) / diagnoses.length) : 0}%
                                 </h3>
-                                <p className="text-gray-600">High Priority</p>
+                                <p className="text-gray-600">Avg Confidence</p>
                             </div>
                         </div>
                     </div>
@@ -320,22 +324,13 @@ const DiagnosisHistory = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1">
                                                 <div className="flex items-center space-x-3 mb-2">
-                                                    {diagnosis.diagnosis?.urgencyLevel && (
-                                                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(diagnosis.diagnosis.urgencyLevel)}`}>
-                                                            {getUrgencyIcon(diagnosis.diagnosis.urgencyLevel)}
-                                                            <span className="ml-1">{diagnosis.diagnosis.urgencyLevel}</span>
-                                                        </span>
-                                                    )}
                                                     <span className="text-sm text-gray-500">
                                                         {formatDate(diagnosis.createdAt)}
                                                     </span>
-                                                </div>                                                <h4 className="font-medium text-gray-900 mb-1">
+                                                </div>
+                                                <h4 className="font-medium text-gray-900 mb-1">
                                                     {diagnosis.diagnosis?.primaryCondition?.name || 'Consultation in progress'}
                                                 </h4>
-
-                                                <p className="text-sm text-gray-600 mb-2">
-                                                    <strong>Symptoms:</strong> {diagnosis.symptoms?.map(s => s.name).join(', ') || 'No symptoms recorded'}
-                                                </p>
 
                                                 {diagnosis.diagnosis?.primaryCondition?.confidence && (
                                                     <div className="flex items-center space-x-4">
@@ -402,7 +397,7 @@ const DiagnosisHistory = () => {
             {/* Modern Delete Confirmation Modal */}
             <AnimatePresence>
                 {deleteConfirmation && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}

@@ -595,32 +595,31 @@ const generateAIResponse = async (diagnosis, userMessage) => {
 
 // Helper function to format diagnosis message
 const formatDiagnosisMessage = (diagnosis) => {
-    let message = `## Health Assessment Complete\n\n`;
+    let message = `## 🏥 Health Assessment Complete\n\n`;
+    message += `---\n\n`;
 
     if (diagnosis.primaryCondition) {
-        message += `**Primary Assessment:** ${diagnosis.primaryCondition.name}\n`;
-        message += `**Confidence Level:** ${diagnosis.primaryCondition.confidence}%\n`;
-        message += `**Description:** ${diagnosis.primaryCondition.description}\n\n`;
+        message += `### 📊 Primary Assessment\n\n`;
+        message += `**Condition:** ${diagnosis.primaryCondition.name}\n\n`;
+        message += `**Confidence Level:** ${diagnosis.primaryCondition.confidence}%\n\n`;
+        message += `**Description:**\n\n${diagnosis.primaryCondition.description}\n\n`;
+        message += `---\n\n`;
     }
 
     if (diagnosis.recommendations && diagnosis.recommendations.length > 0) {
-        message += `**Recommendations:**\n`;
+        message += `### 📋 Recommendations\n\n`;
         diagnosis.recommendations.forEach((rec, index) => {
-            message += `${index + 1}. ${rec}\n`;
+            message += `**${index + 1}.** ${rec}\n\n`;
         });
-        message += `\n`;
+        message += `---\n\n`;
     }
 
-    message += `**⚠️ Important Disclaimer:**\n`;
-    message += `This assessment is for informational purposes only and should not replace professional medical advice. `;
+    message += `### ⚠️ Important Disclaimer\n\n`;
+    message += `> This assessment is for **informational purposes only** and should not replace professional medical advice.\n\n`;
+    message += `> Please consult with a healthcare provider for proper diagnosis and treatment.\n\n`;
 
-    if (diagnosis.urgencyLevel === 'emergency') {
-        message += `**🚨 URGENT: Please seek immediate medical attention.**`;
-    } else if (diagnosis.urgencyLevel === 'high') {
-        message += `**Please consult with a healthcare provider soon.**`;
-    } else {
-        message += `Please consult with a healthcare provider for proper diagnosis and treatment.`;
-    }
+    message += `---\n\n`;
+    message += `*Assessment completed at ${new Date().toLocaleString()}*`;
 
     return message;
 };
