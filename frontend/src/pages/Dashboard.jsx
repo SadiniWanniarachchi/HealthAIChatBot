@@ -642,8 +642,8 @@ const Dashboard = () => {
                                                     <div className="flex items-center justify-center">
                                                         <CircularProgress
                                                             percentage={getBMIProgress().percentage}
-                                                            size={120}
-                                                            strokeWidth={10}
+                                                            size={150}
+                                                            strokeWidth={15}
                                                             color={getBMIProgress().color}
                                                             label="BMI Index"
                                                             showPercentage={false}
@@ -669,8 +669,8 @@ const Dashboard = () => {
                                                     <div className="flex items-center justify-center">
                                                         <CircularProgress
                                                             percentage={getBloodPressureProgress().percentage}
-                                                            size={120}
-                                                            strokeWidth={10}
+                                                            size={150}
+                                                            strokeWidth={15}
                                                             color={getBloodPressureProgress().color}
                                                             label="Blood Pressure"
                                                             showPercentage={false}
@@ -698,8 +698,8 @@ const Dashboard = () => {
                                                     <div className="flex items-center justify-center">
                                                         <CircularProgress
                                                             percentage={getCholesterolProgress().percentage}
-                                                            size={120}
-                                                            strokeWidth={10}
+                                                            size={150}
+                                                            strokeWidth={15}
                                                             color={getCholesterolProgress().color}
                                                             label="Cholesterol"
                                                             showPercentage={false}
@@ -726,8 +726,8 @@ const Dashboard = () => {
                                                     <div className="flex items-center justify-center">
                                                         <CircularProgress
                                                             percentage={getDiabetesProgress().percentage}
-                                                            size={120}
-                                                            strokeWidth={10}
+                                                            size={150}
+                                                            strokeWidth={15}
                                                             color={getDiabetesProgress().color}
                                                             label="Diabetes Status"
                                                             showPercentage={false}
@@ -746,7 +746,7 @@ const Dashboard = () => {
                                         </div>
 
                                         {/* Physical Measurements - Simple List Layout */}
-                                        <div className="bg-white rounded-2xl p-6 border border-gray-200">
+                                        <div className="bg-white rounded-2xl p-4 border border-gray-200">
                                             <h4 className="text-xl font-bold text-gray-800 mb-6">Physical Measurements</h4>
                                             <div className="space-y-4">
                                                 {user.healthProfile.weight && (
