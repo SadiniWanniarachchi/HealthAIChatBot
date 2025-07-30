@@ -136,11 +136,8 @@ const Profile = () => {
 
         try {
             setIsLoading(true);
-            console.log('Saving health profile data:', healthData);
             const response = await usersAPI.updateHealthProfile(healthData);
-            console.log('Backend response:', response);
             updateUser(response.user);
-            console.log('Updated user in context:', response.user);
             setIsEditingHealth(false);
             toast.success('Health profile updated successfully!');
         } catch (error) {

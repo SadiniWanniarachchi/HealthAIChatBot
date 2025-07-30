@@ -8,22 +8,12 @@ import {
     History,
     User,
     LogOut,
-    TrendingUp,
-    Clock,
     AlertCircle,
-    CheckCircle,
-    Plus,
-    Menu,
-    X,
-    ChevronDown,
     Calendar,
     Activity,
     Bot,
     Settings,
-    Home,
     Heart,
-    Zap,
-    Brain,
     Shield
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
@@ -40,17 +30,6 @@ const Dashboard = () => {
         completedDiagnoses: 0,
         averageRating: 0
     });
-
-    // Debug user data
-    console.log('Dashboard user data:', user);
-    console.log('Dashboard user health profile:', user?.healthProfile);
-
-    // Mock health data matching the reference design
-    const healthMetrics = {
-        heartRate: { value: 80, unit: 'beats/min', status: 'normal', change: '+5 million' },
-        bloodPressure: { value: '4.75', unit: 'liters', status: 'normal', change: '+2.3%' },
-        temperature: { value: 5, unit: 'million/ml', status: 'normal', change: '+1.2%' }
-    };
 
     // Health Profile Functions
     const calculateBMI = () => {

@@ -83,7 +83,6 @@ Example approach: "I understand your concern about [symptom]. To better help you
 
             for (const modelName of modelNames) {
                 try {
-                    console.log(`Backend: Trying Gemini model: ${modelName}`);
 
                     const response = await fetch(`${this.baseURL}/models/${modelName}:generateContent?key=${this.apiKey}`, {
                         method: 'POST',
@@ -100,7 +99,6 @@ Example approach: "I understand your concern about [symptom]. To better help you
 
                         // If model is overloaded, try with a short delay
                         if (errorMessage.includes('overloaded') && (modelName === 'gemini-1.5-pro' || modelName === 'gemini-1.5-flash')) {
-                            console.log(`Backend: Retrying ${modelName} after brief delay...`);
                             await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
 
                             const retryResponse = await fetch(`${this.baseURL}/models/${modelName}:generateContent?key=${this.apiKey}`, {
@@ -114,7 +112,6 @@ Example approach: "I understand your concern about [symptom]. To better help you
                             if (retryResponse.ok) {
                                 const retryData = await retryResponse.json();
                                 if (retryData.candidates && retryData.candidates.length > 0) {
-                                    console.log(`Backend: Successfully used Gemini model: ${modelName} (after retry)`);
                                     return retryData.candidates[0].content.parts[0].text.trim();
                                 }
                             }
@@ -145,7 +142,6 @@ Example approach: "I understand your concern about [symptom]. To better help you
                         continue;
                     }
 
-                    console.log(`Backend: Successfully used Gemini model: ${modelName}`);
                     return candidate.content.parts[0].text;
 
                 } catch (error) {

@@ -64,8 +64,6 @@ const DiagnosisHistory = () => {
                 page: currentPage
             });
 
-            console.log(`Fetched ${userDiagnoses.length} diagnoses for user:`, user.email);
-
         } catch (error) {
             console.error('Error fetching diagnosis history:', error);
             if (error.response?.status === 401) {
@@ -150,9 +148,6 @@ const DiagnosisHistory = () => {
         });
 
         // Navigate to the chat interface to show the original conversation
-        console.log('Viewing diagnosis:', diagnosis.sessionId, 'for user:', user.email);
-        console.log('Messages to pass:', diagnosis.messages);
-
         navigate(`/chat/${diagnosis.sessionId}`, {
             state: {
                 existingSession: diagnosis,
@@ -178,7 +173,6 @@ const DiagnosisHistory = () => {
         try {
             // Delete from MongoDB
             await diagnosisAPI.deleteDiagnosis(diagnosisId);
-            console.log('Successfully deleted from MongoDB:', diagnosisId);
 
             // Remove from local state immediately
             setDiagnoses(prev => prev.filter(d => d.sessionId !== diagnosisId));

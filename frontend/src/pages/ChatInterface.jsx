@@ -32,17 +32,7 @@ const ChatInterface = () => {
     const [userInfo, setUserInfo] = useState({ age: '', gender: '' });
     const messagesEndRef = useRef(null);
 
-    // Debug function to log state changes
-    const debugLog = (action, data) => {
-        console.log(`[ChatInterface] ${action}:`, data);
-    };
-
     useEffect(() => {
-        debugLog('useEffect triggered', {
-            sessionId,
-            hasLocationState: !!location.state?.existingSession,
-            messagesLength: messages.length
-        });
 
         // Ensure user is authenticated
         if (!user) {
@@ -82,8 +72,6 @@ const ChatInterface = () => {
             setUserInfo(existingSession.userInfo || { age: '', gender: '' });
             setShowInitialForm(false);
 
-            console.log('Loaded existing session from state:', existingSession);
-            console.log('Loaded existing messages:', existingMessages);
 
             // Clear the navigation state to prevent reloading on re-renders
             window.history.replaceState({}, document.title);
@@ -113,9 +101,7 @@ const ChatInterface = () => {
             // This prevents overwriting messages loaded from navigation state
             if (messages.length === 0) {
                 setMessages(response.diagnosis.chatMessages || []);
-                console.log('Loaded messages from backend:', response.diagnosis.chatMessages);
             } else {
-                console.log('Keeping existing messages, not loading from backend');
             }
 
             setShowInitialForm(false);
@@ -283,7 +269,6 @@ const ChatInterface = () => {
             // If this is a local session, we need to create a backend session first
             if (!currentSession || currentSession.sessionId.startsWith('local_')) {
                 try {
-                    console.log('Creating backend session for local conversation...');
 
                     // Create a new backend session
                     const mongoResponse = await diagnosisAPI.startDiagnosis({
@@ -317,7 +302,6 @@ const ChatInterface = () => {
                         currentMedications: []
                     });
 
-                    console.log('Saved local conversation to MongoDB:', mongoResponse.sessionId);
                     toast.success('Conversation saved and assessment completed!');
 
                 } catch (error) {
@@ -333,7 +317,6 @@ const ChatInterface = () => {
                         currentMedications: []
                     });
 
-                    console.log('Completed diagnosis session:', currentSession.sessionId);
                     toast.success('Health assessment completed and saved to your history');
 
                     // Update current session status

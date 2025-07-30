@@ -67,7 +67,6 @@ export const AuthProvider = ({ children }) => {
             try {
                 localStorage.removeItem('completedSessions');
                 localStorage.removeItem('syncedSessions');
-                console.log('Cleaned up old localStorage session data');
             } catch (error) {
                 console.warn('Error cleaning up old session data:', error);
             }
