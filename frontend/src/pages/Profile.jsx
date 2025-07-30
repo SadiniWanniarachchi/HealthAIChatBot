@@ -41,6 +41,10 @@ const Profile = () => {
         weight: user?.healthProfile?.weight || '',
         height: user?.healthProfile?.height || '',
         bloodGroup: user?.healthProfile?.bloodGroup || '',
+        bloodPressureSystolic: user?.healthProfile?.bloodPressureSystolic || '',
+        bloodPressureDiastolic: user?.healthProfile?.bloodPressureDiastolic || '',
+        diabetesStatus: user?.healthProfile?.diabetesStatus || '',
+        cholesterolLevel: user?.healthProfile?.cholesterolLevel || '',
         allergies: user?.healthProfile?.allergies || '',
         chronicConditions: user?.healthProfile?.chronicConditions || '',
         medications: user?.healthProfile?.medications || '',
@@ -132,11 +136,15 @@ const Profile = () => {
 
         try {
             setIsLoading(true);
+            console.log('Saving health profile data:', healthData);
             const response = await usersAPI.updateHealthProfile(healthData);
+            console.log('Backend response:', response);
             updateUser(response.user);
+            console.log('Updated user in context:', response.user);
             setIsEditingHealth(false);
             toast.success('Health profile updated successfully!');
         } catch (error) {
+            console.error('Health profile save error:', error);
             toast.error(error.response?.data?.message || 'Failed to update health profile');
         } finally {
             setIsLoading(false);
@@ -678,6 +686,80 @@ const Profile = () => {
                                         </div>
                                     </div>
 
+                                    {/* Vital Health Metrics */}
+                                    <div>
+                                        <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
+                                            <Heart className="h-4 w-4 mr-2 text-red-500" />
+                                            Vital Health Metrics
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Blood Pressure (mmHg)
+                                                </label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <input
+                                                            type="number"
+                                                            name="bloodPressureSystolic"
+                                                            value={healthData.bloodPressureSystolic}
+                                                            onChange={handleHealthChange}
+                                                            placeholder="120"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        />
+                                                        <label className="text-xs text-gray-500 mt-1 block">Systolic</label>
+                                                    </div>
+                                                    <div>
+                                                        <input
+                                                            type="number"
+                                                            name="bloodPressureDiastolic"
+                                                            value={healthData.bloodPressureDiastolic}
+                                                            onChange={handleHealthChange}
+                                                            placeholder="80"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        />
+                                                        <label className="text-xs text-gray-500 mt-1 block">Diastolic</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="cholesterolLevel" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Cholesterol Level (mg/dL)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    id="cholesterolLevel"
+                                                    name="cholesterolLevel"
+                                                    value={healthData.cholesterolLevel}
+                                                    onChange={handleHealthChange}
+                                                    placeholder="180"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <label htmlFor="diabetesStatus" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Diabetes Status
+                                            </label>
+                                            <select
+                                                id="diabetesStatus"
+                                                name="diabetesStatus"
+                                                value={healthData.diabetesStatus}
+                                                onChange={handleHealthChange}
+                                                className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">Select Status</option>
+                                                <option value="No Diabetes">No Diabetes</option>
+                                                <option value="Pre-diabetic">Pre-diabetic</option>
+                                                <option value="Type 1 Diabetes">Type 1 Diabetes</option>
+                                                <option value="Type 2 Diabetes">Type 2 Diabetes</option>
+                                                <option value="Gestational Diabetes">Gestational Diabetes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     {/* Medical Information */}
                                     <div>
                                         <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
@@ -790,6 +872,10 @@ const Profile = () => {
                                                     weight: user?.healthProfile?.weight || '',
                                                     height: user?.healthProfile?.height || '',
                                                     bloodGroup: user?.healthProfile?.bloodGroup || '',
+                                                    bloodPressureSystolic: user?.healthProfile?.bloodPressureSystolic || '',
+                                                    bloodPressureDiastolic: user?.healthProfile?.bloodPressureDiastolic || '',
+                                                    diabetesStatus: user?.healthProfile?.diabetesStatus || '',
+                                                    cholesterolLevel: user?.healthProfile?.cholesterolLevel || '',
                                                     allergies: user?.healthProfile?.allergies || '',
                                                     chronicConditions: user?.healthProfile?.chronicConditions || '',
                                                     medications: user?.healthProfile?.medications || '',
@@ -865,6 +951,68 @@ const Profile = () => {
                                         )}
                                     </div>
 
+                                    {/* Vital Health Metrics Display */}
+                                    {(healthData.bloodPressureSystolic || healthData.bloodPressureDiastolic || healthData.diabetesStatus || healthData.cholesterolLevel) && (
+                                        <div className="space-y-4">
+                                            <h3 className="font-medium text-gray-900 flex items-center">
+                                                <Heart className="h-4 w-4 mr-2 text-red-500" />
+                                                Vital Health Metrics
+                                            </h3>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {(healthData.bloodPressureSystolic || healthData.bloodPressureDiastolic) && (
+                                                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                                        <div className="flex items-center">
+                                                            <Heart className="h-5 w-5 text-red-600 mr-3" />
+                                                            <div>
+                                                                <p className="text-sm text-red-600">Blood Pressure</p>
+                                                                <p className="font-medium text-red-900">
+                                                                    {healthData.bloodPressureSystolic || '---'}/{healthData.bloodPressureDiastolic || '---'} mmHg
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {healthData.cholesterolLevel && (
+                                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                        <div className="flex items-center">
+                                                            <Activity className="h-5 w-5 text-yellow-600 mr-3" />
+                                                            <div>
+                                                                <p className="text-sm text-yellow-600">Cholesterol</p>
+                                                                <p className="font-medium text-yellow-900">{healthData.cholesterolLevel} mg/dL</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {healthData.diabetesStatus && (
+                                                    <div className={`border rounded-lg p-3 ${healthData.diabetesStatus === 'No Diabetes' ? 'bg-green-50 border-green-200' :
+                                                        healthData.diabetesStatus === 'Pre-diabetic' ? 'bg-orange-50 border-orange-200' :
+                                                            'bg-red-50 border-red-200'
+                                                        }`}>
+                                                        <div className="flex items-center">
+                                                            <Shield className={`h-5 w-5 mr-3 ${healthData.diabetesStatus === 'No Diabetes' ? 'text-green-600' :
+                                                                healthData.diabetesStatus === 'Pre-diabetic' ? 'text-orange-600' :
+                                                                    'text-red-600'
+                                                                }`} />
+                                                            <div>
+                                                                <p className={`text-sm ${healthData.diabetesStatus === 'No Diabetes' ? 'text-green-600' :
+                                                                    healthData.diabetesStatus === 'Pre-diabetic' ? 'text-orange-600' :
+                                                                        'text-red-600'
+                                                                    }`}>Diabetes Status</p>
+                                                                <p className={`font-medium ${healthData.diabetesStatus === 'No Diabetes' ? 'text-green-900' :
+                                                                    healthData.diabetesStatus === 'Pre-diabetic' ? 'text-orange-900' :
+                                                                        'text-red-900'
+                                                                    }`}>{healthData.diabetesStatus}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Medical Information Display */}
                                     {(healthData.allergies || healthData.chronicConditions || healthData.medications) && (
                                         <div className="space-y-4">
@@ -918,21 +1066,23 @@ const Profile = () => {
                                         </div>
                                     )}
 
-                                    {!healthData.weight && !healthData.height && !healthData.bloodGroup && (
-                                        <div className="text-center py-8">
-                                            <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">Complete Your Health Profile</h3>
-                                            <p className="text-gray-600 mb-4">
-                                                Add your health information to get personalized insights and better health consultations.
-                                            </p>
-                                            <button
-                                                onClick={() => setIsEditingHealth(true)}
-                                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-                                            >
-                                                Add Health Information
-                                            </button>
-                                        </div>
-                                    )}
+                                    {!healthData.weight && !healthData.height && !healthData.bloodGroup &&
+                                        !healthData.bloodPressureSystolic && !healthData.bloodPressureDiastolic &&
+                                        !healthData.diabetesStatus && !healthData.cholesterolLevel && (
+                                            <div className="text-center py-8">
+                                                <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                                <h3 className="text-lg font-medium text-gray-900 mb-2">Complete Your Health Profile</h3>
+                                                <p className="text-gray-600 mb-4">
+                                                    Add your health information to get personalized insights and better health consultations.
+                                                </p>
+                                                <button
+                                                    onClick={() => setIsEditingHealth(true)}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                                                >
+                                                    Add Health Information
+                                                </button>
+                                            </div>
+                                        )}
                                 </div>
                             )}
                         </div>

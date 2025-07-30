@@ -76,6 +76,26 @@ const userSchema = new mongoose.Schema({
             enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
             trim: true
         },
+        bloodPressureSystolic: {
+            type: Number,
+            min: [50, 'Systolic pressure seems too low'],
+            max: [300, 'Systolic pressure seems too high']
+        },
+        bloodPressureDiastolic: {
+            type: Number,
+            min: [30, 'Diastolic pressure seems too low'],
+            max: [200, 'Diastolic pressure seems too high']
+        },
+        diabetesStatus: {
+            type: String,
+            enum: ['No Diabetes', 'Pre-diabetic', 'Type 1 Diabetes', 'Type 2 Diabetes', 'Gestational Diabetes'],
+            trim: true
+        },
+        cholesterolLevel: {
+            type: Number,
+            min: [50, 'Cholesterol level seems too low'],
+            max: [500, 'Cholesterol level seems too high']
+        },
         dateOfBirth: {
             type: Date
         },

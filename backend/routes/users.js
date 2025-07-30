@@ -165,6 +165,10 @@ router.put('/health-profile', auth, async (req, res) => {
             weight,
             height,
             bloodGroup,
+            bloodPressureSystolic,
+            bloodPressureDiastolic,
+            diabetesStatus,
+            cholesterolLevel,
             allergies,
             chronicConditions,
             medications,
@@ -178,6 +182,10 @@ router.put('/health-profile', auth, async (req, res) => {
         if (weight !== undefined) healthProfile.weight = parseFloat(weight) || undefined;
         if (height !== undefined) healthProfile.height = parseFloat(height) || undefined;
         if (bloodGroup !== undefined) healthProfile.bloodGroup = bloodGroup.trim();
+        if (bloodPressureSystolic !== undefined) healthProfile.bloodPressureSystolic = parseFloat(bloodPressureSystolic) || undefined;
+        if (bloodPressureDiastolic !== undefined) healthProfile.bloodPressureDiastolic = parseFloat(bloodPressureDiastolic) || undefined;
+        if (diabetesStatus !== undefined) healthProfile.diabetesStatus = diabetesStatus.trim();
+        if (cholesterolLevel !== undefined) healthProfile.cholesterolLevel = parseFloat(cholesterolLevel) || undefined;
         if (allergies !== undefined) healthProfile.allergies = allergies.trim();
         if (chronicConditions !== undefined) healthProfile.chronicConditions = chronicConditions.trim();
         if (medications !== undefined) healthProfile.medications = medications.trim();
