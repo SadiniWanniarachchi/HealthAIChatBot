@@ -216,8 +216,8 @@ const ChatInterface = () => {
                         symptoms: []
                     });
 
-                    // Simulate realistic typing delay
-                    const typingDelay = Math.min(response.botResponse.message.length * 30, 3000);
+                    // Simulate realistic typing delay - reduced for faster response
+                    const typingDelay = Math.min(response.botResponse.message.length * 5, 800);
 
                     setTimeout(() => {
                         setMessages(prev => [...prev, {
@@ -239,8 +239,8 @@ const ChatInterface = () => {
             // Fallback to local AI service (for local sessions or backend failures)
             const aiResponse = await aiService.sendMessage(currentInput, messages);
 
-            // Simulate realistic typing delay
-            const typingDelay = Math.min(aiResponse.message.length * 30, 3000);
+            // Simulate realistic typing delay - reduced for faster response
+            const typingDelay = Math.min(aiResponse.message.length * 5, 800);
 
             setTimeout(() => {
                 setMessages(prev => [...prev, {
@@ -278,6 +278,8 @@ const ChatInterface = () => {
                 return;
             }
 
+            let diagnosisResponse = null;
+
             // If this is a local session, we need to create a backend session first
             if (!currentSession || currentSession.sessionId.startsWith('local_')) {
                 try {
@@ -309,8 +311,8 @@ const ChatInterface = () => {
                         isLocal: false
                     });
 
-                    // Complete the diagnosis
-                    await diagnosisAPI.completeDiagnosis(mongoResponse.sessionId, {
+                    // Complete the diagnosis and capture the response
+                    diagnosisResponse = await diagnosisAPI.completeDiagnosis(mongoResponse.sessionId, {
                         medicalHistory: [],
                         currentMedications: []
                     });
@@ -321,11 +323,12 @@ const ChatInterface = () => {
                 } catch (error) {
                     console.error('Failed to save local conversation:', error);
                     toast.error('Failed to save conversation. Please try again.');
+                    return;
                 }
             } else {
                 // Complete the existing diagnosis session in MongoDB
                 try {
-                    await diagnosisAPI.completeDiagnosis(currentSession.sessionId, {
+                    diagnosisResponse = await diagnosisAPI.completeDiagnosis(currentSession.sessionId, {
                         medicalHistory: [],
                         currentMedications: []
                     });
@@ -343,7 +346,23 @@ const ChatInterface = () => {
                 } catch (error) {
                     console.error('Failed to complete diagnosis:', error);
                     toast.error('Failed to complete assessment. Please try again.');
+                    return;
                 }
+            }
+
+            // Display the diagnosis in real-time in the chat
+            if (diagnosisResponse && diagnosisResponse.diagnosis) {
+                const formattedDiagnosis = formatDiagnosisResult(diagnosisResponse.diagnosis);
+
+                // Add the diagnosis message to the chat immediately
+                const diagnosisMessage = {
+                    message: formattedDiagnosis,
+                    sender: 'bot',
+                    timestamp: new Date(),
+                    messageType: 'diagnosis'
+                };
+
+                setMessages(prev => [...prev, diagnosisMessage]);
             }
 
         } catch (error) {
@@ -392,7 +411,7 @@ const ChatInterface = () => {
     };
 
     const formatDiagnosisResult = (diagnosis) => {
-        let result = `## 🏥 Health Assessment Complete\n\n`;
+        let result = `##Health Assessment Complete\n\n`;
         result += `---\n\n`;
 
         if (diagnosis.primaryCondition) {
@@ -683,7 +702,7 @@ const ChatInterface = () => {
                                 <div className="flex items-center min-w-0 flex-1">
                                     <button
                                         onClick={() => navigate('/history')}
-                                        className="mr-2 sm:mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0"
+                                        className="mr-2 sm:mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0 cursor-pointer"
                                     >
                                         <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                                     </button>
@@ -807,7 +826,7 @@ const ChatInterface = () => {
                                     <button
                                         onClick={completeDiagnosis}
                                         disabled={isLoading}
-                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
                                     >
                                         {isLoading ? (
                                             <Loader2 className="w-4 h-4 animate-spin mr-2 inline" />
@@ -836,7 +855,7 @@ const ChatInterface = () => {
                                 <button
                                     type="submit"
                                     disabled={!inputMessage.trim() || isTyping || isLoading}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
                                 >
                                     <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>

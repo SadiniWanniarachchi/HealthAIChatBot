@@ -218,7 +218,7 @@ const DiagnosisHistory = () => {
                         <div className="flex items-center">
                             <button
                                 onClick={() => navigate('/dashboard')}
-                                className="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                className="mr-4 p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer"
                             >
                                 <ArrowLeft className="h-5 w-5" />
                             </button>
@@ -255,7 +255,7 @@ const DiagnosisHistory = () => {
                             </div>
                             <div className="ml-4">
                                 <h3 className="text-2xl font-bold text-gray-900">
-                                    {diagnoses.reduce((total, d) => total + (d.chatMessages?.length || 0), 0)}
+                                    {diagnoses.reduce((total, d) => total + (d.messages?.length || 0), 0)}
                                 </h3>
                                 <p className="text-gray-600">Total Messages</p>
                             </div>
@@ -292,7 +292,7 @@ const DiagnosisHistory = () => {
                             <p className="text-gray-600 mb-4">Start your first health consultation to see your history here</p>
                             <button
                                 onClick={() => navigate('/chat')}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors cursor-pointer"
                             >
                                 Start New Consultation
                             </button>
@@ -351,7 +351,7 @@ const DiagnosisHistory = () => {
                                                 {/* Direct delete button - always visible */}
                                                 <button
                                                     onClick={(e) => handleDeleteClick(e, diagnosis)}
-                                                    className="p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-700 transition-colors"
+                                                    className="p-2 rounded-full hover:bg-red-100 text-red-600 hover:text-red-700 transition-colors cursor-pointer"
                                                     disabled={deletingIds.has(diagnosis.sessionId)}
                                                     title="Delete consultation"
                                                 >
@@ -376,14 +376,14 @@ const DiagnosisHistory = () => {
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                         disabled={pagination.current === 1}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                     >
                                         Previous
                                     </button>
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.pages))}
                                         disabled={pagination.current === pagination.pages}
-                                        className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                     >
                                         Next
                                     </button>
@@ -406,11 +406,9 @@ const DiagnosisHistory = () => {
                             className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
                         >
                             {/* Header with gradient */}
-                            <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-white">
+                            <div className="bg-red-700 p-6 text-white">
                                 <div className="flex items-center">
-                                    <div className="p-2 bg-white bg-opacity-20 rounded-full mr-4">
-                                        <AlertCircle className="h-6 w-6" />
-                                    </div>
+
                                     <div>
                                         <h3 className="text-lg font-semibold">Delete Consultation</h3>
                                         <p className="text-red-100 text-sm">This action cannot be undone</p>
@@ -450,13 +448,13 @@ const DiagnosisHistory = () => {
                                 <div className="flex space-x-3">
                                     <button
                                         onClick={() => setDeleteConfirmation(null)}
-                                        className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                        className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={handleDeleteConfirm}
-                                        className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center"
+                                        className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center cursor-pointer"
                                         disabled={deletingIds.has(deleteConfirmation.sessionId)}
                                     >
                                         {deletingIds.has(deleteConfirmation.sessionId) ? (

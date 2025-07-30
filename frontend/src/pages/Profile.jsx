@@ -206,7 +206,7 @@ const Profile = () => {
                         <div className="flex items-center">
                             <motion.button
                                 onClick={() => navigate('/dashboard')}
-                                className="mr-4 p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+                                className="mr-4 p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 cursor-pointer"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -261,7 +261,7 @@ const Profile = () => {
                                 {!isEditing && (
                                     <button
                                         onClick={() => setIsEditing(true)}
-                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
                                     >
                                         Edit Profile
                                     </button>
@@ -323,7 +323,7 @@ const Profile = () => {
                                         <button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
                                         >
                                             {isLoading ? 'Saving...' : 'Save Changes'}
                                         </button>
@@ -337,7 +337,7 @@ const Profile = () => {
                                                     avatar: user?.avatar || ''
                                                 });
                                             }}
-                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                                         >
                                             Cancel
                                         </button>
@@ -421,7 +421,7 @@ const Profile = () => {
                                 {!isChangingPassword && (
                                     <button
                                         onClick={() => setIsChangingPassword(true)}
-                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
                                     >
                                         Change Password
                                     </button>
@@ -448,7 +448,7 @@ const Profile = () => {
                                             />
                                             <button
                                                 type="button"
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                                                 onClick={() => togglePasswordVisibility('current')}
                                             >
                                                 {showPasswords.current ? (
@@ -476,7 +476,7 @@ const Profile = () => {
                                             />
                                             <button
                                                 type="button"
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                                                 onClick={() => togglePasswordVisibility('new')}
                                             >
                                                 {showPasswords.new ? (
@@ -504,7 +504,7 @@ const Profile = () => {
                                             />
                                             <button
                                                 type="button"
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                                                 onClick={() => togglePasswordVisibility('confirm')}
                                             >
                                                 {showPasswords.confirm ? (
@@ -520,7 +520,7 @@ const Profile = () => {
                                         <button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
                                         >
                                             {isLoading ? 'Changing...' : 'Change Password'}
                                         </button>
@@ -534,7 +534,7 @@ const Profile = () => {
                                                     confirmPassword: ''
                                                 });
                                             }}
-                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                                         >
                                             Cancel
                                         </button>
@@ -579,7 +579,7 @@ const Profile = () => {
                                 {!isEditingHealth && (
                                     <button
                                         onClick={() => setIsEditingHealth(true)}
-                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                        className="text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
                                     >
                                         Edit Health Info
                                     </button>
@@ -778,7 +778,7 @@ const Profile = () => {
                                         <button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer"
                                         >
                                             {isLoading ? 'Saving...' : 'Save Health Profile'}
                                         </button>
@@ -798,7 +798,7 @@ const Profile = () => {
                                                     dateOfBirth: user?.healthProfile?.dateOfBirth || ''
                                                 });
                                             }}
-                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                                         >
                                             Cancel
                                         </button>
@@ -927,7 +927,7 @@ const Profile = () => {
                                             </p>
                                             <button
                                                 onClick={() => setIsEditingHealth(true)}
-                                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                                             >
                                                 Add Health Information
                                             </button>

@@ -98,7 +98,7 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center group">
+                        <Link to="/" className="flex items-center group cursor-pointer">
                             <div className="relative">
                                 <HeartPulse className="h-8 w-8 text-blue-600 group-hover:text-blue-700 transition-colors" />
                                 <div className="absolute inset-0 h-8 w-8 text-blue-600 animate-ping opacity-20">
@@ -108,9 +108,7 @@ const LandingPage = () => {
                             <span className="ml-3 text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                                 MediCare AI
                             </span>
-                        </Link>
-
-                        {/* Desktop Navigation */}
+                        </Link>                        {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center space-x-8">
                             <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
                                 Features
@@ -140,7 +138,7 @@ const LandingPage = () => {
                         {/* Mobile menu button */}
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="md:hidden p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                            className="md:hidden p-2 text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
                         >
                             <Menu className="h-6 w-6" />
                         </button>

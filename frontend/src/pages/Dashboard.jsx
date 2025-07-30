@@ -157,7 +157,7 @@ const Dashboard = () => {
             >
                 {/* Logo */}
                 <motion.div
-                    className="w-12 h-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mb-8"
+                    className="w-12 h-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mb-8 cursor-pointer"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                 >
@@ -168,7 +168,7 @@ const Dashboard = () => {
                 <div className="flex flex-col space-y-6 flex-1">
                     <motion.button
                         onClick={() => navigate('/chat')}
-                        className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative"
+                        className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative cursor-pointer"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         title="Start Chat with AI"
@@ -181,7 +181,7 @@ const Dashboard = () => {
 
                     <motion.button
                         onClick={() => navigate('/profile')}
-                        className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative"
+                        className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative cursor-pointer"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         title="Profile"
@@ -194,7 +194,7 @@ const Dashboard = () => {
 
                     <motion.button
                         onClick={() => navigate('/history')}
-                        className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative"
+                        className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative cursor-pointer"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         title="Chat History"
@@ -209,7 +209,7 @@ const Dashboard = () => {
                 {/* Logout Button at Bottom */}
                 <motion.button
                     onClick={handleLogout}
-                    className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative mt-auto"
+                    className="w-12 h-12 bg-white border-2 border-blue-500 rounded-xl flex items-center justify-center text-blue-500 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-300 group relative mt-auto cursor-pointer"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     title="Logout"
