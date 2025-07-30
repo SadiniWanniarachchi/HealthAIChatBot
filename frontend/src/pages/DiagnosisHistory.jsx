@@ -166,8 +166,6 @@ const DiagnosisHistory = () => {
 
         const diagnosisId = deleteConfirmation.sessionId;
 
-        console.log('Attempting to delete from MongoDB:', diagnosisId);
-
         setDeletingIds(prev => new Set([...prev, diagnosisId]));
 
         try {

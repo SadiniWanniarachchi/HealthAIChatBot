@@ -14,7 +14,8 @@ import {
     Bot,
     Settings,
     Heart,
-    Shield
+    Shield,
+    Brain
 } from 'lucide-react';
 import { diagnosisAPI } from '../services/api';
 import toast from 'react-hot-toast';

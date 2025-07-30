@@ -61,12 +61,6 @@ const ChatInterface = () => {
                 return;
             }
 
-            debugLog('Loading from location.state', {
-                sessionId: existingSession.sessionId,
-                messagesCount: existingMessages.length,
-                userEmail: currentUserEmail
-            });
-
             setCurrentSession(existingSession);
             setMessages(existingMessages);
             setUserInfo(existingSession.userInfo || { age: '', gender: '' });
@@ -78,7 +72,6 @@ const ChatInterface = () => {
 
         } else if (sessionId && !sessionId.startsWith('local_') && messages.length === 0) {
             // Only load from backend if we don't have existing session data and messages
-            debugLog('Loading from backend', { sessionId, userEmail: user.email });
             loadExistingSession();
         }
     }, [sessionId, location.state?.existingSession]);
